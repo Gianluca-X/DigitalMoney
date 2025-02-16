@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: gateway-service
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      uri: http://config-server:8888/
+      discovery:
+        serviceId: config-server
+      enabled: true
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - Origin
+              - X-Requested-With
+              - Content-Type
+              - Accept
+              - Authorization
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        - id: user-service
+          uri: http://user-service:8087
+          predicates:
+            - Path=/users/**
+        - id: accounts-service
+          uri: http://accounts-service:8084
+          predicates:
+            - Path=/accounts/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Gateway
+    description: API gateway
+    version: 1.0.0
+
+eureka:
+  instance:
+    statusPageUrlPath: /actuator/info
+    healthCheckUrlPath: /actuator/info
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka/
+
+server:
+  port: 8085
+main:
+  allow-bean-definition-overriding: true

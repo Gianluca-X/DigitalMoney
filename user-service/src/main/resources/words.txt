@@ -1,0 +1,12 @@
+agua
+mar
+tierra
+cielo
+arena
+fuego
+animales
+personas
+paises
+estados
+ciudad
+pueblo
