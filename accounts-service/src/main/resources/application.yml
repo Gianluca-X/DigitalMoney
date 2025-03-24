@@ -13,6 +13,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  config:
+    import: "optional:configserver:"  # <--- Corrección aquí
 
   mvc:
     pathmatch:
@@ -34,3 +36,5 @@ eureka:
 logging:
   level:
     org.hibernate.type.descriptor.sql: TRACE
+jwt:
+  secret: MysecretClabe23
