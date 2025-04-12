@@ -8,6 +8,7 @@ import com.example.userservice.exceptions.EmailNotVerifiedException;
 import com.example.userservice.exceptions.IncorrectPasswordException;
 import com.example.userservice.exceptions.UserNotFoundException;
 import lombok.NonNull;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public interface IUserService {
     String authenticateAndLogin(LoginRequest request) throws UserNotFoundException, IncorrectPasswordException, EmailNotVerifiedException;
     void verifyUserEmail(String email, String verificationCode);
 
-    UserRegisterOutDto getUserById(Long id);
+    UserRegisterOutDto getUserById(Long id, Jwt jwt);
     Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException;
     void processPasswordResetRequest(String email);
     void resetPassword(String token, String newPassword, String confirmPassword);

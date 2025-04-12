@@ -83,20 +83,24 @@ public class UserServiceImpl implements IUserService {
 
         return registeredUser;
     }
-
     @Override
     public UserRegisterOutDto getUserById(Long id, @AuthenticationPrincipal Jwt jwt) {
-        if (jwt == null) {
-            throw new RuntimeException("Usuario no autenticado");
+        if (jwt != null) {
+            // Si el JWT está presente, usas el correo del JWT para obtener el usuario
+            String email = jwt.getClaim("email");
+            logger.info("📥 Buscando usuario autenticado con email: " + email);
+
+            User userBuscado = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+            return modelMapper.map(userBuscado, UserRegisterOutDto.class);
+        } else {
+            // Si el JWT no está presente, obtienes el usuario por ID
+            User userBuscado = userRepository.findById(id)
+                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+            return modelMapper.map(userBuscado, UserRegisterOutDto.class);
         }
-
-        String email = jwt.getClaim("email");
-        logger.info("📥 Buscando usuario autenticado con email: " + email);
-
-        User userBuscado = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
-
-        return modelMapper.map(userBuscado, UserRegisterOutDto.class);
     }
 
     private void registerUserInKeycloak(User user, String password) {
