@@ -1,45 +1,47 @@
 package com.example.userservice.config;
 
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsConfigurationSource;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
-
-//@EnableMethodSecurity
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-
-
-
-
-    @Autowired
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(http -> {
-                    // Ejemplo: permite el acceso a la creación de usuario sin autenticación
-                    // http.requestMatchers("/create-user").permitAll();
-                    //http.requestMatchers("/users/{userId}/logout").authenticated();
-                   http.anyRequest().permitAll();
-                })
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        // 🔓 Endpoints públicos (ejemplo: registro y login)
+                        .requestMatchers(HttpMethod.POST, "/users/register", "/users/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/public/**").permitAll()
 
+                        // 🔒 Endpoints protegidos (requieren autenticación con Keycloak)
+                        .requestMatchers("/users/**").authenticated()
+
+                        // 🔒 Solo admin puede eliminar usuarios
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+
+                        // 🔒 Cualquier otra ruta requiere autenticación
+                        .anyRequest().authenticated()
+                )
+                // 🔐 Integración con Keycloak (JWT Bearer Token)
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt())
 
                 .build();
     }
@@ -48,19 +50,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of(HttpMethod.GET.name(), HttpMethod.POST.name(), HttpMethod.PUT.name(), HttpMethod.DELETE.name(), HttpMethod.OPTIONS.name(), HttpMethod.PATCH.name()));
-        configuration.setAllowedHeaders(List.of("*")); // Permitir todos los encabezados
-        configuration.setAllowCredentials(true); // Permitir credenciales
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplicar a todas las rutas
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
     @Bean
-    public CorsWebFilter corsWebFilter() {
-        return new CorsWebFilter(corsConfigurationSource());
+    public CorsFilter corsFilter() {
+        return new CorsFilter(corsConfigurationSource());
     }
-
-
 }
