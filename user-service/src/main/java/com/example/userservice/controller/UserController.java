@@ -151,7 +151,7 @@ public class UserController {
     }
     @GetMapping("/{id}")
     public ResponseEntity<UserRegisterOutDto> getUser(@PathVariable Long id) {
-        UserRegisterOutDto user = iuserServicegit add g.getUserById(id);
+        UserRegisterOutDto user = iuserService.getUserById(id);
         return ResponseEntity.ok(user);
     }
 /**

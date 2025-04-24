@@ -38,7 +38,13 @@ spring:
           uri: http://accounts-service:8084
           predicates:
             - Path=/accounts/**
-
+          filters:
+            - TokenRelay=
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/digitalmoneyhouse
 management:
   endpoints:
     web:
