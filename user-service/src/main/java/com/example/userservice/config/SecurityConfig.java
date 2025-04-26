@@ -27,22 +27,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 Endpoints públicos (ejemplo: registro y login)
                         .requestMatchers(HttpMethod.POST, "/users/register", "/users/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/public/**").permitAll()
-
-                        // 🔒 Endpoints protegidos (requieren autenticación con Keycloak)
                         .requestMatchers("/users/**").authenticated()
-
-                        // 🔒 Solo admin puede eliminar usuarios
                         .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
-
-                        // 🔒 Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 )
-                // 🔐 Integración con Keycloak (JWT Bearer Token)
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt())
-
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt()) // Keycloak
+                .addFilterBefore(new JwtAuthenticationFilter(), BearerTokenAuthenticationFilter.class) // Tu filtro JWT
                 .build();
     }
 
