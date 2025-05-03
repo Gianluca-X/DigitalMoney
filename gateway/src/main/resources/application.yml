@@ -30,6 +30,10 @@ spring:
             allowCredentials: true
             maxAge: 3600
       routes:
+        - id: auth-service
+          uri: http://auth-service:8082
+          predicates:
+            - Path=/auth/**
         - id: user-service
           uri: http://user-service:8087
           predicates:
@@ -39,7 +43,7 @@ spring:
           predicates:
             - Path=/accounts/**
           filters:
-            - TokenRelay=
+            - TokenRelay
   security:
     oauth2:
       resourceserver:

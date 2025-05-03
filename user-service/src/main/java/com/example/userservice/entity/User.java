@@ -35,8 +35,6 @@ public class User implements UserDetails {
     @Column(length = 50)
     private String email;
 
-    @Column(length = 100)
-    private String password;
 
     // Atributos generados automáticamente
     @Column(length = 22, unique = true)  // CVU es único y tiene un tamaño fijo de 22 caracteres
@@ -80,5 +78,11 @@ public class User implements UserDetails {
         return true;
     }
 
+    public String getEmail() {
+        return email;
+    }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }

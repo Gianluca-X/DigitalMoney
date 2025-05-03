@@ -13,10 +13,11 @@ public class Card {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long accountId; // Relación con la cuenta
     private String number; // Número de tarjeta
     private String name; // Tipo de tarjeta (Crédito/Débito)
     private String expiry; // Fecha de expiración
+    private Long accountId; // Relación con la cuenta
+
     private String cvc; // Código de seguridad
 
     public Long getId() {

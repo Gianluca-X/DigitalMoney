@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt()) // Keycloak
-                .addFilterBefore(new JwtAuthenticationFilter(), BearerTokenAuthenticationFilter.class) // Tu filtro JWT
+                .addFilterBefore(new com.example.userservice.security.JwtAuthenticationFilter(), BearerTokenAuthenticationFilter.class) // Tu filtro JWT
                 .build();
     }
 

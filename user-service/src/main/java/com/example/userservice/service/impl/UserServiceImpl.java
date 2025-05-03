@@ -7,17 +7,14 @@ import com.example.userservice.generatorCVU.GeneratorCVU;
 import com.example.userservice.dto.exit.UserRegisterOutDto;
 import com.example.userservice.entity.User;
 import com.example.userservice.repository.UserRepository;
-import com.example.userservice.repository.VerificationTokenRepository;
 import com.example.userservice.service.IUserService;
 import com.example.userservice.service.client.AccountClient;
-import com.example.userservice.utils.JsonPrinter;
 import jakarta.ws.rs.BadRequestException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,53 +33,51 @@ public class UserServiceImpl implements IUserService {
     private final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-    private final PasswordEncoder passwordEncoder;
     private final AccountClient accountClient;
-    private final EmailService emailService;
 
-    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, EmailService emailService, AccountClient accountClient) {
+    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, AccountClient accountClient) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
         this.accountClient = accountClient;
     }
-
+    @Override
     @Transactional
-    public User createUser(@NonNull UserEntryDto userEntryDto) {
-        if (userRepository.existsByEmail(userEntryDto.getEmail())) {
-            throw new EmailAlreadyRegisteredException("Email is already registered!");
+    public void createUserFromEvent(UserRegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            log.warn("El usuario con email {} ya existe. No se creará de nuevo.", request.getEmail());
+            return;
         }
 
         String alias = generateUniqueAlias();
         String cvu = GeneratorCVU.generateCVU();
 
-        User user = modelMapper.map(userEntryDto, User.class);
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setDni(request.getDni());
         user.setAlias(alias);
         user.setCvu(cvu);
-        user.setEmailVerified(false);
-        user.setPassword(passwordEncoder.encode(userEntryDto.getPassword()));
+        user.setEmailVerified(true); // ✅ porque el auth-service ya lo validó
 
-        User registeredUser = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        // 📌 Crear usuario en Keycloak
-        registerUserInKeycloak(registeredUser, userEntryDto.getPassword());
-
-        // 📌 Crear cuenta en Account Service
+        // Crear cuenta en Account Service
         AccountCreationRequest accountRequest = new AccountCreationRequest();
-        accountRequest.setUserId(registeredUser.getId());
-        accountRequest.setEmail(registeredUser.getEmail());
-        accountRequest.setAlias(registeredUser.getAlias());
-        accountRequest.setCvu(registeredUser.getCvu());
+        accountRequest.setUserId(savedUser.getId());
+        accountRequest.setEmail(savedUser.getEmail());
+        accountRequest.setAlias(savedUser.getAlias());
+        accountRequest.setCvu(savedUser.getCvu());
         accountRequest.setInitialBalance(BigDecimal.ZERO);
 
         AccountResponse accountResponse = accountClient.createAccount(accountRequest, "Bearer " + getAdminToken());
+        savedUser.setAccountId(accountResponse.getId());
+        userRepository.save(savedUser);
 
-        registeredUser.setAccountId(accountResponse.getId());
-        userRepository.save(registeredUser);
-
-        return registeredUser;
+        log.info("👤 Usuario creado desde evento con email: {}", request.getEmail());
     }
+
     @Override
     public UserRegisterOutDto getUserById(Long id, @AuthenticationPrincipal Jwt jwt) {
         if (jwt != null) {
@@ -120,6 +115,18 @@ public class UserServiceImpl implements IUserService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(keycloakUser, headers);
         new RestTemplate().postForEntity(keycloakUrl, request, String.class);
     }
+    @Override
+    public void createUserFromEvent(UserRegisterRequest request) {
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setDni(request.getDni());
+
+        userRepository.save(user);
+        log.info("Usuario creado en base al evento RabbitMQ");
+    }
 
     private String getAdminToken() {
         String keycloakUrl = "http://localhost:8080/realms/master/protocol/openid-connect/token";
@@ -145,24 +152,18 @@ public class UserServiceImpl implements IUserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         modelMapper.map(userEntryDto, existingUser);
-        existingUser.setPassword(passwordEncoder.encode(userEntryDto.getPassword()));
         userRepository.save(existingUser);
     }
+    public void updateUserEmail(Long userId, String newEmail) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    @Override
-    public void logoutUser(String token) {
-
+        user.setEmail(newEmail);
+        userRepository.save(user);
     }
 
-    @Override
-    public String authenticateAndLogin(LoginRequest request) throws UserNotFoundException, IncorrectPasswordException, EmailNotVerifiedException {
-        return null;
-    }
 
-    @Override
-    public void verifyUserEmail(String email, String verificationCode) {
 
-    }
 
     @Override
     public UserRegisterOutDto getUserById(Long id) {
@@ -172,16 +173,6 @@ public class UserServiceImpl implements IUserService {
     @Override
     public Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException {
         return null;
-    }
-
-    @Override
-    public void processPasswordResetRequest(String email) {
-
-    }
-
-    @Override
-    public void resetPassword(String token, String newPassword, String confirmPassword) {
-
     }
 
     public void updateAlias(Long id, String alias) {

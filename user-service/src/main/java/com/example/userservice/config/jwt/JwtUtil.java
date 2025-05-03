@@ -25,22 +25,26 @@ public class JwtUtil {
                 .compact();
     }
 
-    // ✅ Extrae el username del token
-    public String getUsernameFromToken(String token) {
-        return getClaims(token).getSubject();
+    // ✅ Extrae el nombre de usuario (subject) desde un token JWT
+    public String extractUsername(String token) {
+        return extractClaims(token).getSubject();
     }
 
-    // ✅ Verifica si el token es válido
-    public boolean isValidToken(String token) {
-        try {
-            Claims claims = getClaims(token);
-            return claims.getExpiration().after(new Date());
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // ✅ Obtiene los claims del token
-    private Claims getClaims(String token) {
+    // ✅ Extrae las reclamaciones (claims) del token JWT
+    private Claims extractClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    // ✅ Valida si un token ha expirado
+    public boolean isTokenExpired(String token) {
+        return extractClaims(token).getExpiration().before(new Date());
+    }
+
+    // ✅ Valida si el token es válido (basado en el nombre de usuario y la expiración)
+    public boolean validateToken(String token, String username) {
+        return (username.equals(extractUsername(token)) && !isTokenExpired(token));
+    }
+}

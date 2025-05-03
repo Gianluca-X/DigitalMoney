@@ -1,12 +1,9 @@
 package com.example.userservice.dto.entry;
 
-import lombok.*;
+import lombok.Data;
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
-public class LoginRequest {
+public class UserUpdateRequest {
     private String email;
     private String password;
 }

@@ -3,12 +3,7 @@ package com.example.userservice;
 import com.example.userservice.config.jwt.TokenManager;
 import com.example.userservice.dto.entry.AccountCreationRequest;
 import com.example.userservice.dto.entry.AccountResponse;
-import com.example.userservice.dto.entry.LoginRequest;
 import com.example.userservice.dto.entry.UserEntryDto;
-import com.example.userservice.dto.exit.UserRegisterOutDto;
-import com.example.userservice.exceptions.IncorrectPasswordException;
-import com.example.userservice.exceptions.EmailNotVerifiedException;
-import com.example.userservice.exceptions.UserNotFoundException;
 import com.example.userservice.entity.User;
 import com.example.userservice.repository.UserRepository;
 import com.example.userservice.service.impl.EmailService;
@@ -28,7 +23,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashSet;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

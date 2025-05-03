@@ -32,8 +32,5 @@ public class UserRegisterModificationDto {
     @NotNull(message = "El email del usuario no puede ser nulo")
     @NotBlank(message = "Debe especificarse el email del usuario")
     private String email;
-    @NotNull(message = "La contraseña del usuario no puede ser nulo")
-    @NotBlank(message = "Debe especificarse la contraseña del usuario")
-    private String password;
 
 }
