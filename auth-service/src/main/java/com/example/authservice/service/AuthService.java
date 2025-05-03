@@ -53,13 +53,13 @@ public class AuthService {
         // Generar el token JWT
         return jwtUtil.generateToken(user.getEmail());
     }
-
     // Login del usuario
     public String login(User user) {
         return userRepository.findByEmail(user.getEmail())
                 .filter(u -> passwordEncoder.matches(user.getPassword(), u.getPassword()))
+                .filter(User::isEmailVerified) // Asegura que el email esté verificado
                 .map(u -> jwtUtil.generateToken(u.getEmail()))
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new RuntimeException("Invalid credentials or email not verified"));
     }
 
     // Cambio de email
