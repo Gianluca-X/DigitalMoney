@@ -35,6 +35,7 @@ public class AuthService {
         request.setLastName(userEntry.getLastName());
         request.setDni(userEntry.getDni());
 
+
         // Guardar en auth_db
         User user = new User();
         user.setEmail(userEntry.getEmail());
@@ -48,6 +49,7 @@ public class AuthService {
         // Enviar el email
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
         // Publicar el evento de registro de usuario
+        request.setAuthId(user.getId());
         userEventPublisher.publishRegisterEvent(request);
 
         // Generar el token JWT

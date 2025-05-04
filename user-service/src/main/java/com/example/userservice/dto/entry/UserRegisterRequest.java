@@ -9,5 +9,7 @@ public class UserRegisterRequest {
     private String lastName;
     private String phone;
     private String dni;
+    private Long authId;
+
 }
 

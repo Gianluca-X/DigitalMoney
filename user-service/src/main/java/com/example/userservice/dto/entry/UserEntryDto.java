@@ -32,6 +32,7 @@ public class UserEntryDto {
         @NotNull(message = "La contraseña del usuario no puede ser nulo")
         @NotBlank(message = "Debe especificarse la contraseña del usuario")
         private String password;
+        private Long authId;
         private Set<String> roles;
 
     }

@@ -59,7 +59,7 @@ public class UserServiceImpl implements IUserService {
         user.setDni(request.getDni());
         user.setAlias(alias);
         user.setCvu(cvu);
-        user.setEmailVerified(true); // ✅ porque el auth-service ya lo validó
+        user.setAuthId(request.getAuthId);
 
         User savedUser = userRepository.save(user);
 
@@ -115,19 +115,6 @@ public class UserServiceImpl implements IUserService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(keycloakUser, headers);
         new RestTemplate().postForEntity(keycloakUrl, request, String.class);
     }
-    @Override
-    public void createUserFromEvent(UserRegisterRequest request) {
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhone(request.getPhone());
-        user.setDni(request.getDni());
-
-        userRepository.save(user);
-        log.info("Usuario creado en base al evento RabbitMQ");
-    }
-
     private String getAdminToken() {
         String keycloakUrl = "http://localhost:8080/realms/master/protocol/openid-connect/token";
 
@@ -165,15 +152,6 @@ public class UserServiceImpl implements IUserService {
 
 
 
-    @Override
-    public UserRegisterOutDto getUserById(Long id) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException {
-        return null;
-    }
 
     public void updateAlias(Long id, String alias) {
         if (alias == null || alias.trim().isEmpty()) {

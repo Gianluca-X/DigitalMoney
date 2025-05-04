@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class UserRegisterRequest {
+    private Long authId;
     private String phone;
     private String email;
     private String firstName;
@@ -50,5 +51,12 @@ public class UserRegisterRequest {
         this.dni = dni;
     }
 
+    public Long getAuthId() {
+        return authId;
+    }
+
+    public void setAuthId(Long authId) {
+        this.authId = authId;
+    }
 }
 

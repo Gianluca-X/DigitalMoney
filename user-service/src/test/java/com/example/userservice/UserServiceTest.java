@@ -52,9 +52,6 @@ public class UserServiceTest {
     @Mock
     private TokenBlacklistService tokenBlacklistService;
 
-    @Mock
-    private EmailService emailService;
-
     @Test
     void deberiaDeRegistrarUnUsuario() {
         // Datos de entrada
