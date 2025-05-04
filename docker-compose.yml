@@ -196,6 +196,18 @@ services:
       config-server:
         condition: service_started
 
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"     # Puerto para la comunicación entre apps
+      - "15672:15672"   # UI de administración web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - back_network
+
 volumes:
   mysql:
   postgres_data:
