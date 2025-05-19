@@ -11,6 +11,15 @@ public class UserEntry {
     private String lastName;
     private String dni;
 
+    public UserEntry(String password, String phone, String email, String firstName, String lastName, String dni) {
+        this.password = password;
+        this.phone = phone;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dni = dni;
+    }
+
     public String getPassword() {
         return password;
     }

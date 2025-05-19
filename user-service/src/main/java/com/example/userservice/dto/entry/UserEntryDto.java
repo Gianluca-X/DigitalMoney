@@ -29,8 +29,9 @@ public class UserEntryDto {
         @NotNull(message = "El email del usuario no puede ser nulo")
         @NotBlank(message = "Debe especificarse el email del usuario")
         private String email;
-        @NotNull(message = "No puede ser nulo el authId")
-        @NotBlank(message = "No debe estar vacio")
+        @NotNull(message = "La contraseña del usuario no puede ser nulo")
+        @NotBlank(message = "Debe especificarse la contraseña del usuario")
+        private String password;
         private Long authId;
         private Set<String> roles;
 
