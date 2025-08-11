@@ -19,7 +19,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8080/realms/digitalmoneyhouse
+          issuer-uri: http://localhost:8080/realms/digitalmoneyhouse
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
@@ -31,11 +31,14 @@ server:
 
 eureka:
   instance:
-    hostname: accounts-service
+    hostname: localhost
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    statusPageUrlPath: /actuator/info
+    healthCheckUrlPath: /actuator/health
+
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka
+      defaultZone: http://localhost:8761/eureka
 
 logging:
   level:
