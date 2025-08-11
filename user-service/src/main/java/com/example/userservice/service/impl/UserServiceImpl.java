@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -42,10 +41,10 @@ public class UserServiceImpl implements IUserService {
     }
     @Override
     @Transactional
-    public void createUserFromEvent(UserRegisterRequest request) {
+    public User createUserFromEvent(UserRegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("El usuario con email {} ya existe. No se creará de nuevo.", request.getEmail());
-            return;
+            return null;
         }
 
         String alias = generateUniqueAlias();
@@ -71,11 +70,12 @@ public class UserServiceImpl implements IUserService {
         accountRequest.setCvu(savedUser.getCvu());
         accountRequest.setInitialBalance(BigDecimal.ZERO);
 
-        AccountResponse accountResponse = accountClient.createAccount(accountRequest, "Bearer " + getAdminToken());
+        AccountResponse accountResponse = accountClient.createAccount(accountRequest);
         savedUser.setAccountId(accountResponse.getId());
         userRepository.save(savedUser);
 
         log.info("👤 Usuario creado desde evento con email: {}", request.getEmail());
+        return savedUser;
     }
 
     @Override
@@ -98,37 +98,6 @@ public class UserServiceImpl implements IUserService {
         }
     }
 
-    private void registerUserInKeycloak(User user, String password) {
-        String keycloakUrl = "http://localhost:8080/admin/realms/DigitalMoneyHouse/users";
-        String adminToken = getAdminToken();
-
-        Map<String, Object> keycloakUser = new HashMap<>();
-        keycloakUser.put("username", user.getEmail());
-        keycloakUser.put("email", user.getEmail());
-        keycloakUser.put("enabled", true);
-        keycloakUser.put("credentials", List.of(Map.of("type", "password", "value", password, "temporary", false)));
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(adminToken);
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(keycloakUser, headers);
-        new RestTemplate().postForEntity(keycloakUrl, request, String.class);
-    }
-    private String getAdminToken() {
-        String keycloakUrl = "http://localhost:8080/realms/master/protocol/openid-connect/token";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        String body = "client_id=admin-cli&username=admin&password=admin&grant_type=password";
-
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity<Map> response = restTemplate.postForEntity(keycloakUrl, request, Map.class);
-        return response.getBody().get("access_token").toString();
-    }
 
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
@@ -162,6 +131,16 @@ public class UserServiceImpl implements IUserService {
         if (updatedRows == 0) {
             throw new UserNotFoundException("Usuario no encontrado");
         }
+    }
+
+    @Override
+    public UserRegisterOutDto getUserById(Long id) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException {
+        return null;
     }
 
     private String generateUniqueAlias() {

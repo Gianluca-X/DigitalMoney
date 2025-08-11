@@ -26,15 +26,6 @@ public class FeignClientConfig {
             }
 
             HttpServletRequest request = attributes.getRequest();
-            String token = request.getHeader("Authorization");
-
-            if (token != null && token.startsWith("Bearer ")) {
-                log.info("✅ Token obtenido en FeignClientConfig: {}", token);
-                requestTemplate.header("Authorization", token);
-            } else {
-                log.warn("⚠ No se encontró un token válido en la cabecera.");
-                log.debug("📌 Headers en la petición: {}", getHeadersAsString(request));
-            }
 
             // Header opcional para indicar que es una llamada interna
             requestTemplate.header("X-Internal-Request", "true");

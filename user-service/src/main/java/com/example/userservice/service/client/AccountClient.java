@@ -12,8 +12,7 @@ public interface AccountClient {
 
     @PostMapping("/accounts/create")
     AccountResponse createAccount(
-            @RequestBody AccountCreationRequest request,
-            @RequestHeader("Authorization") String token
+            @RequestBody AccountCreationRequest request
     );
 }
 

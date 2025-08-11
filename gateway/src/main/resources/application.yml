@@ -5,10 +5,10 @@ spring:
     import: "optional:configserver:"
   cloud:
     config:
-      uri: http://config-server:8888/
+      uri: http://localhost:8888/
       discovery:
         serviceId: config-server
-      enabled: true
+      enabled: false 
     gateway:
       globalcors:
         corsConfigurations:
@@ -31,15 +31,15 @@ spring:
             maxAge: 3600
       routes:
         - id: auth-service
-          uri: http://auth-service:8082
+          uri: http://localhost:8082
           predicates:
             - Path=/auth/**
         - id: user-service
-          uri: http://user-service:8087
+          uri: http://localhost:8087
           predicates:
             - Path=/users/**
         - id: accounts-service
-          uri: http://accounts-service:8084
+          uri: http://localhost:8084
           predicates:
             - Path=/accounts/**
           filters:
@@ -48,7 +48,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8080/realms/digitalmoneyhouse
+          issuer-uri: http://localhost:8080/realms/digitalmoneyhouse
 management:
   endpoints:
     web:
@@ -70,7 +70,7 @@ eureka:
     healthCheckUrlPath: /actuator/info
   client:
     serviceUrl:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
 
 server:
   port: 8085

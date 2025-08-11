@@ -1,8 +1,9 @@
-version: '3.8'
 
 services:
   mysql:
     container_name: mysql
+    mem_limit: 512m
+    cpus: 0.5
     image: mysql:latest
     restart: unless-stopped
     env_file:
@@ -47,6 +48,14 @@ services:
       interval: 30s
       retries: 5
       timeout: 10s
+    deploy:
+        resources:
+          limits:
+            cpus: "0.5"        # Limit CPU to 0.5 CPU core (50% of one core)
+            memory: 512M       # Limit memory to 512 MB
+          reservations:
+            cpus: "0.2"        # Reserve 0.2 CPU core (20% of one core)
+            memory: 256M       # Reserve 256 MB memory      
 
   keycloak:
     container_name: keycloak
@@ -78,9 +87,19 @@ services:
         condition: service_healthy
     networks:
       - back_network
+    deploy:
+        resources:
+          limits:
+            cpus: "0.5"        # Limit CPU to 0.5 CPU core (50% of one core)
+            memory: 512M       # Limit memory to 512 MB
+          reservations:
+            cpus: "0.2"        # Reserve 0.2 CPU core (20% of one core)
+            memory: 256M       # Reserve 256 MB memory      
 
   eureka-server:
     container_name: eureka-server
+    mem_limit: 512m
+    cpus: 0.5
     build:
       context: .
       dockerfile: ./eureka-server/Dockerfile
@@ -91,6 +110,8 @@ services:
 
   config-server:
     container_name: config-server
+    mem_limit: 512m
+    cpus: 0.5
     build:
       context: .
       dockerfile: ./config-server/Dockerfile
@@ -106,6 +127,8 @@ services:
       - back_network
   auth-service:
     container_name: auth-service
+    mem_limit: 1g
+    cpus: 1
     build:
       context: .
       dockerfile: ./auth-service/Dockerfile
@@ -130,6 +153,9 @@ services:
 
   gateway:
     container_name: gateway
+    mem_limit: 1g
+    cpus: 1
+
     build:
       context: .
       dockerfile: ./gateway/Dockerfile
@@ -147,6 +173,9 @@ services:
 
   user-service:
     container_name: user-service
+    mem_limit: 1g
+    cpus: 1
+
     env_file:
       - .env
     build:
@@ -172,6 +201,8 @@ services:
 
   accounts-service:
     container_name: accounts-service
+    mem_limit: 1g
+    cpus: 1
     env_file:
       - .env
     build:
@@ -198,6 +229,8 @@ services:
 
   rabbitmq:
     container_name: rabbitmq
+    mem_limit: 512m
+    cpus: 0.5
     image: rabbitmq:3-management
     ports:
       - "5672:5672"     # Puerto para la comunicación entre apps

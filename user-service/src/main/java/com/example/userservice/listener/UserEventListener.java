@@ -1,7 +1,7 @@
 package com.example.userservice.listener;
 
-import com.example.authservice.dto.UserEmailChangedEvent;
 import com.example.userservice.dto.entry.UserRegisterRequest;
+import com.example.userservice.dto.entry.UserUpdateRequest;
 import com.example.userservice.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,7 @@ public class UserEventListener {
 
     // Evento para actualizar email
     @RabbitListener(queues = "user.email.changed")
-    public void handleEmailChangedEvent(UserEmailChangedEvent event) {
+    public void handleEmailChangedEvent( UserUpdateRequest event) {
         userService.updateUserEmail(event.getUserId(), event.getNewEmail());
         log.info("Email actualizado desde evento: {}", event.getNewEmail());
     }

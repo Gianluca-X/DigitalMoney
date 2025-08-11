@@ -4,6 +4,13 @@ import lombok.Data;
 
 @Data
 public class UserUpdateRequest {
+    private Long id;
     private String email;
-    private String password;
+
+    public Long getUserId() {
+        return id;
+    }
+    public String getNewEmail(){
+        return email;
+    }
 }
