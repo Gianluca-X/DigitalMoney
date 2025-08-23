@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -26,8 +28,8 @@ public class UserController {
     private final IUserService iuserService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserRegisterOutDto> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(iuserService.getUserById(id));
+    public ResponseEntity<UserRegisterOutDto> getUser(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(iuserService.getUserById(id, jwt));
     }
 
     @PutMapping("/update/{userId}")

@@ -1,5 +1,6 @@
 package com.example.authservice.controller;
 
+import com.example.authservice.dto.LoginRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.example.authservice.dto.UserEntry;
@@ -7,6 +8,7 @@ import com.example.authservice.entity.User;
 import com.example.authservice.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,7 +30,7 @@ public class AuthController {
     // Login de un usuario
     @Operation(summary = "Login de usuario", description = "login de usuario")
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<String> login(@RequestBody LoginRequest user) {
         String token = authService.login(user);
         return ResponseEntity.ok(token);
     }
@@ -36,8 +38,12 @@ public class AuthController {
     // Cambio de email
     @Operation(summary = "cambiar email",description = "cambia el correo")
     @PatchMapping("/change-email")
-    public ResponseEntity<String> changeEmail(@RequestParam Long userId, @RequestParam String newEmail) {
-        authService.changeEmail(userId, newEmail);
+    public ResponseEntity<String> changeEmail(
+            @RequestParam String newEmail,
+            Authentication authentication
+    ) {
+        String currentEmail = authentication.getName(); // viene del token (subject)
+        authService.changeEmail( newEmail);
         return ResponseEntity.ok("Email updated successfully");
     }
 

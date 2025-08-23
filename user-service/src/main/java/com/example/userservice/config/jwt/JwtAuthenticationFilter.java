@@ -19,7 +19,7 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final String SECRET_KEY = "tuclabesecreta"; // 👈 poné la misma que usa auth-service (o mejor leemos de application.yml)
+    private final String SECRET_KEY = "MysecretClabe23"; // 👈 poné la misma que usa auth-service (o mejor leemos de application.yml)
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
