@@ -1,5 +1,6 @@
 package com.example.authservice.controller;
 
+import com.example.authservice.dto.LoginRequest;
 import com.example.authservice.dto.UserEntry;
 import com.example.authservice.entity.User;
 import com.example.authservice.service.AuthService;
@@ -28,7 +29,7 @@ class AuthControllerTest {
 
     @Test
     void login_returnsToken() {
-        User user = new User();
+        LoginRequest user = new LoginRequest();
         user.setEmail("nerea@example.com");
         user.setPassword("clave123");
 
@@ -42,9 +43,9 @@ class AuthControllerTest {
 
     @Test
     void changeEmail_success() {
-        ResponseEntity<String> response = controller.changeEmail(1L, "nuevo@example.com");
+        ResponseEntity<String> response = controller.changeEmail( "nuevo@example.com",2333232);
         assertEquals(200, response.getStatusCodeValue());
-        verify(authService).changeEmail(1L, "nuevo@example.com");
+        verify(authService).changeEmail("nuevo@example.com",);
     }
 
     @Test

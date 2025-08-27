@@ -17,11 +17,11 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "Accounts")
-public class Account implements UserDetails {
+public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+    private Long id;
 
     private Long userId;
 
@@ -33,49 +33,13 @@ public class Account implements UserDetails {
 
     private BigDecimal balance;
 
-    private String password; // Campo para almacenar la contraseña del usuario
-
     @Transient
     private List<Transaction> transactions;
 
-    public Account(Long Id, BigDecimal balance) {
-        this.Id = Id;
+    public Account(Long id, BigDecimal balance) {
+        this.id = id;
         this.balance = balance;
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return new ArrayList<>(); // Retorna los roles o permisos si los tienes
-    }
-
-    @Override
-    public String getPassword() {
-        return this.password; // Devuelve la contraseña del usuario
-    }
-
-    @Override
-    public String getUsername() {
-        return this.email; // Usa el email como el nombre de usuario
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
 }
 

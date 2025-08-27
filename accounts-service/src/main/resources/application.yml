@@ -26,9 +26,6 @@ spring:
 
 server:
   port: 8084
-  servlet:
-    context-path: /accounts
-
 eureka:
   instance:
     hostname: localhost
@@ -44,5 +41,15 @@ logging:
   level:
     org.hibernate.type.descriptor.sql: TRACE
     org.springframework: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
 jwt:
   secret: MysecretClabe23
+internal:
+  token: secret-internal-token-123
+management:
+  endpoints:
+    web:
+      exposure:
+        include=*:

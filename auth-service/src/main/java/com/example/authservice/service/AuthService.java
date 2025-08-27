@@ -61,7 +61,7 @@ public class AuthService {
     public String login(LoginRequest user) {
         return userRepository.findByEmail(user.getEmail())
                 .filter(u -> passwordEncoder.matches(user.getPassword(), u.getPassword()))
-                .filter(User::isEmailVerified) // Asegura que el email esté verificado
+//                .filter(User::isEmailVerified) // Asegura que el email esté verificado
                 .map(u -> jwtUtil.generateToken(u.getEmail()))
                 .orElseThrow(() -> new RuntimeException("Invalid credentials or email not verified"));
     }
@@ -83,22 +83,27 @@ public class AuthService {
     }
 
     // Cambio de contraseña
-    public void changePassword(Long userId, String newPassword) {
-        User user = userRepository.findById(userId)
+    public void changePassword(String newPassword) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         // Actualizar la contraseña en auth_db
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        log.info("Password changed for user: {}", userId);
+        log.info("Password changed for user: {}" + email);
     }
-    public void verifyEmail(String email) {
+    public void verifyEmail(String code) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setEmailVerified(true);
-        userRepository.save(user);
-        log.info("Email verified for user: {}", email);
+        log.info("codigo antes de el if " + user.getVerificationCode());
+        if(user.getVerificationCode().equals(code)) {
+            user.setEmailVerified(true);
+            log.info("codigo: " + user.getVerificationCode());
+            userRepository.save(user);
+            log.info("Email verified for user: {}", email);
+        }
     }
 
 }

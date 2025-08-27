@@ -4,7 +4,6 @@ import com.example.userservice.aliasGenerator.AliasGenerator;
 import com.example.userservice.dto.entry.*;
 import com.example.userservice.exceptions.*;
 import com.example.userservice.generatorCVU.GeneratorCVU;
-import com.example.userservice.dto.exit.UserRegisterOutDto;
 import com.example.userservice.entity.User;
 import com.example.userservice.repository.UserRepository;
 import com.example.userservice.service.IUserService;
@@ -19,8 +18,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -58,7 +55,7 @@ public class UserServiceImpl implements IUserService {
         user.setDni(request.getDni());
         user.setAlias(alias);
         user.setCvu(cvu);
-        user.setAuthId(request.getAuthId);
+        user.setAuthId(request.getAuthId());
 
         User savedUser = userRepository.save(user);
 
@@ -79,22 +76,22 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public UserRegisterOutDto getUserById(Long id, @AuthenticationPrincipal Jwt jwt) {
+    public User getUserById(Long id, @AuthenticationPrincipal Jwt jwt) {
         if (jwt != null) {
             // Si el JWT está presente, usas el correo del JWT para obtener el usuario
             String email = jwt.getClaim("email");
             logger.info("📥 Buscando usuario autenticado con email: " + email);
 
             User userBuscado = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado by mail"));
 
-            return modelMapper.map(userBuscado, UserRegisterOutDto.class);
+            return modelMapper.map(userBuscado, User.class);
         } else {
             // Si el JWT no está presente, obtienes el usuario por ID
             User userBuscado = userRepository.findById(id)
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado p0r id"));
 
-            return modelMapper.map(userBuscado, UserRegisterOutDto.class);
+            return modelMapper.map(userBuscado, User.class);
         }
     }
 
@@ -132,12 +129,6 @@ public class UserServiceImpl implements IUserService {
             throw new UserNotFoundException("Usuario no encontrado");
         }
     }
-
-    @Override
-    public UserRegisterOutDto getUserById(Long id) {
-        return null;
-    }
-
     @Override
     public Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException {
         return null;

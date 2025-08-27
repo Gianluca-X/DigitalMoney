@@ -15,6 +15,7 @@ import com.DigitalMoneyHouse.accountsservice.entities.Transaction;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -101,7 +102,8 @@ public class AccountsServiceImpl implements IAccountService {
         // Guarda la cuenta en la base de datos
         account = accountsRepository.save(account);
 
-        AccountResponse response = new AccountResponse();
+
+    AccountResponse response = new AccountResponse();
         response.setId(account.getId());
         response.setBalance(account.getBalance());
 

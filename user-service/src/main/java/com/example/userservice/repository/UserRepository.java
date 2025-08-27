@@ -14,11 +14,14 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User>findByEmail(String email);
+
+    @Override
+    Optional<User> findById(Long id);
+
     boolean existsByAlias(String alias); // Verificar si un alias ya existe
     //Optional<User>findByName(String userName);
     boolean existsByEmail(String email); // Verificar si un email ya existe
     //boolean existsByUserName(String userName); // Verificar si un nombre de usuario ya existe
-    public User getUserById(Long id);
     @Modifying
     @Transactional
     @Query("UPDATE User u SET u.alias = :alias WHERE u.id = :id")

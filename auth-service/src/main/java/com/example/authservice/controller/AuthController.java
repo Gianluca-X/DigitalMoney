@@ -50,8 +50,8 @@ public class AuthController {
     // Cambio de contraseña
     @Operation(summary = "cambia la contraseña",description = "cambio de contraseña")
     @PatchMapping("/change-password")
-    public ResponseEntity<String> changePassword(@RequestParam Long userId, @RequestParam String newPassword) {
-        authService.changePassword(userId, newPassword);
+    public ResponseEntity<String> changePassword(@RequestParam String newPassword) {
+        authService.changePassword(newPassword);
         return ResponseEntity.ok("Password updated successfully");
     }
     @Operation(summary = "verificar correo",description = "verifica su correo")

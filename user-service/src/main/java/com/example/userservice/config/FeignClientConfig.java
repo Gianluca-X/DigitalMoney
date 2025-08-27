@@ -1,8 +1,8 @@
 package com.example.userservice.config;
 
 import feign.RequestInterceptor;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -15,22 +15,15 @@ import java.util.Enumeration;
 @Configuration
 public class FeignClientConfig {
 
+    @Value("${internal.token}")
+    private String internalToken;
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
-            // Obtener la solicitud HTTP actual
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                log.warn("⚠ No se puede obtener la solicitud HTTP. El token no será enviado.");
-                return;
-            }
-
-            HttpServletRequest request = attributes.getRequest();
-
-            // Header opcional para indicar que es una llamada interna
-            requestTemplate.header("X-Internal-Request", "true");
+            requestTemplate.header("Authorization", "Bearer " + internalToken);
         };
     }
+
 
     /**
      * Convierte los headers de la petición en un string para debugging

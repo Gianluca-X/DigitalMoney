@@ -46,20 +46,38 @@ public class AccountsController {
             @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
     })
     @PostMapping("/create")
-    public ResponseEntity<AccountResponse> createAccount(
+    public ResponseEntity<Map<String, Object>> createAccount(
             @RequestBody AccountCreationRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @AuthenticationPrincipal Jwt jwt) {
 
-        if (jwt == null) {
-            LOGGER.warn("Intento de creación de cuenta sin autenticación.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String internalToken = "secret-internal-token-123"; // inyectalo con @Value en prod
+
+        if (authHeader != null && authHeader.equals("Bearer " + internalToken)) {
+            LOGGER.info("✅ Solicitud interna autorizada con token interno.");
+            AccountResponse response = accountsService.createAccount(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    Map.of(
+                            "message", "Cuenta creada exitosamente",
+                            "account", response
+                    )
+            );
         }
 
-        String email = jwt.getClaim("email");
-        LOGGER.info("📥 Creando cuenta para usuario autenticado: {}", email);
+        if (jwt != null) {
+            String email = jwt.getClaim("email");
+            LOGGER.info("📥 Creando cuenta para usuario autenticado: {}", email);
+            AccountResponse response = accountsService.createAccount(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    Map.of(
+                            "message", "Cuenta creada exitosamente",
+                            "account", response
+                    )
+            );
+        }
 
-        AccountResponse response = accountsService.createAccount(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        LOGGER.warn("Intento de creación de cuenta sin autenticación válida.");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     // 📌 Obtener balance de cuenta
