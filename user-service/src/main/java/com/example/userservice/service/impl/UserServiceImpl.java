@@ -1,13 +1,16 @@
 package com.example.userservice.service.impl;
 
 import com.example.userservice.aliasGenerator.AliasGenerator;
+import com.example.userservice.dto.AuthResponse;
 import com.example.userservice.dto.entry.*;
+import com.example.userservice.dto.exit.UserRegisterOutDto;
 import com.example.userservice.exceptions.*;
 import com.example.userservice.generatorCVU.GeneratorCVU;
 import com.example.userservice.entity.User;
 import com.example.userservice.repository.UserRepository;
 import com.example.userservice.service.IUserService;
 import com.example.userservice.service.client.AccountClient;
+import com.example.userservice.service.client.AuthClient;
 import jakarta.ws.rs.BadRequestException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -30,24 +33,36 @@ public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final AccountClient accountClient;
+    private final AuthClient authClient;
 
-    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, AccountClient accountClient) {
+    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, AccountClient accountClient, AuthClient authClient) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.accountClient = accountClient;
+        this.authClient = authClient;
     }
     @Override
     @Transactional
-    public User createUserFromEvent(UserRegisterRequest request) {
+    public UserRegisterOutDto handleRegister(UserRegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("El usuario con email {} ya existe. No se creará de nuevo.", request.getEmail());
-            return null;
+            throw new EmailAlreadyRegisteredException("El email " + request.getEmail() + " ya está registrado");
         }
 
+
+        // 1️⃣ Registrar en AuthService para obtener authId
+        UserRegisterAuthRequest authRequest = new UserRegisterAuthRequest();
+        authRequest.setEmail(request.getEmail());
+        authRequest.setPassword(request.getPassword()); // Se enviará solo al auth service
+
+        AuthResponse authResponse = authClient.registerUser(authRequest);
+
+        // 2️⃣ Crear usuario en UserService
         String alias = generateUniqueAlias();
         String cvu = GeneratorCVU.generateCVU();
 
         User user = new User();
+        user.setAuthId(authResponse.getAuthId());
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -55,11 +70,10 @@ public class UserServiceImpl implements IUserService {
         user.setDni(request.getDni());
         user.setAlias(alias);
         user.setCvu(cvu);
-        user.setAuthId(request.getAuthId());
 
         User savedUser = userRepository.save(user);
 
-        // Crear cuenta en Account Service
+        // 3️⃣ Crear cuenta en Account Service
         AccountCreationRequest accountRequest = new AccountCreationRequest();
         accountRequest.setUserId(savedUser.getId());
         accountRequest.setEmail(savedUser.getEmail());
@@ -71,8 +85,24 @@ public class UserServiceImpl implements IUserService {
         savedUser.setAccountId(accountResponse.getId());
         userRepository.save(savedUser);
 
-        log.info("👤 Usuario creado desde evento con email: {}", request.getEmail());
-        return savedUser;
+        log.info("👤 Usuario creado con authId: {}", authResponse.getAuthId());
+        log.info("Cuenta Creada con account id: " + accountResponse.getId());
+        // Luego, devolver algo como:
+        return UserRegisterOutDto.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .dni(user.getDni())
+                .phone(user.getPhone())
+                .authId(user.getAuthId())
+                .accountId(accountResponse.getId())
+                .email(user.getEmail())
+                .cvu(user.getCvu())
+                .alias(user.getAlias())
+                .balance(accountResponse.getBalance())
+                .token(authResponse.getToken())
+                .build();
+
     }
 
     @Override

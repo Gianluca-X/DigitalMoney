@@ -1,13 +1,14 @@
 package com.example.authservice.service;
 import java.util.UUID;
 
-import com.example.authservice.dto.LoginRequest;
-import com.example.authservice.dto.UserEntry;
-import com.example.authservice.dto.UserRegisterRequest;
-import com.example.authservice.dto.UserEmailChangedEvent;
+import com.example.authservice.dto.*;
 import com.example.authservice.entity.User;
+import com.example.authservice.exceptions.EmailNotVerifiedException;
+import com.example.authservice.exceptions.InvalidPasswordException;
+import com.example.authservice.exceptions.UserNotFoundException;
 import com.example.authservice.repository.UserRepository;
 import com.example.authservice.security.JwtUtil;
+import com.mysql.cj.log.Log;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -28,15 +29,7 @@ public class AuthService {
     private final UserEventPublisher userEventPublisher; // Inyectar el publicador de eventos
 
     // Registro de un usuario
-    public String register(UserEntry userEntry) {
-        // Crear DTO para el registro en user-service
-        UserRegisterRequest request = new UserRegisterRequest();
-        request.setPhone(userEntry.getPhone());
-        request.setEmail(userEntry.getEmail());
-        request.setFirstName(userEntry.getFirstName());
-        request.setLastName(userEntry.getLastName());
-        request.setDni(userEntry.getDni());
-
+    public AuthResponse register(UserEntry userEntry) {
 
         // Guardar en auth_db
         User user = new User();
@@ -51,19 +44,27 @@ public class AuthService {
         // Enviar el email
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
         // Publicar el evento de registro de usuario
-        request.setAuthId(user.getId());
-        userEventPublisher.publishRegisterEvent(request);
 
         // Generar el token JWT
-        return jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user.getEmail());
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setAuthId(user.getId());
+        authResponse.setToken(token);
+        return authResponse;
     }
-    // Login del usuario
-    public String login(LoginRequest user) {
-        return userRepository.findByEmail(user.getEmail())
-                .filter(u -> passwordEncoder.matches(user.getPassword(), u.getPassword()))
-//                .filter(User::isEmailVerified) // Asegura que el email esté verificado
-                .map(u -> jwtUtil.generateToken(u.getEmail()))
-                .orElseThrow(() -> new RuntimeException("Invalid credentials or email not verified"));
+    public String login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("Usuario inexistente"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidPasswordException("Contraseña incorrecta");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException("Email no verificado"); // Opcional, 400 o 403 según política
+        }
+
+       return jwtUtil.generateToken(user.getEmail());
     }
 
     // Cambio de email

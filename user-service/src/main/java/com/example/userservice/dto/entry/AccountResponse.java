@@ -6,12 +6,12 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccountResponse {
     private Long id;
-    private String email;
-    private String alias;
-    private String cvu;
+
     private BigDecimal balance;
 }

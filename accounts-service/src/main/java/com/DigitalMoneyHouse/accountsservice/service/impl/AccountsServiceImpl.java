@@ -12,6 +12,7 @@ import com.DigitalMoneyHouse.accountsservice.dto.AccountCreationRequest;
 import com.DigitalMoneyHouse.accountsservice.dto.AccountResponse;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Transaction;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 public class AccountsServiceImpl implements IAccountService {
     private final ModelMapper modelMapper;
@@ -90,7 +91,7 @@ public class AccountsServiceImpl implements IAccountService {
                 .map(account -> modelMapper.map(account, AccountOutDTO.class))// Convertir cada Account a AccountDTO
                 .collect(Collectors.toList());
     }
-
+@Transactional
     public AccountResponse createAccount(AccountCreationRequest request) {
         Account account = new Account();
         account.setUserId(request.getUserId());
@@ -106,6 +107,7 @@ public class AccountsServiceImpl implements IAccountService {
     AccountResponse response = new AccountResponse();
         response.setId(account.getId());
         response.setBalance(account.getBalance());
+    log.info("✅ Cuenta creada con id={} email={} alias={}", account.getId(), account.getEmail(), account.getAlias());
 
         return response;
     }

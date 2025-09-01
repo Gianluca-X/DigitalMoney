@@ -1,5 +1,6 @@
 package com.example.authservice.controller;
 
+import com.example.authservice.dto.AuthResponse;
 import com.example.authservice.dto.LoginRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,9 +23,9 @@ public class AuthController {
     @Operation(summary = "Registro de usuario", description = "Registra un nuevo usuario en el sistema")
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserEntry userEntry) {
-        String token = authService.register(userEntry);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<AuthResponse> register(@RequestBody UserEntry userEntry) {
+        AuthResponse authResponse = authService.register(userEntry);
+        return ResponseEntity.ok(authResponse);
     }
 
     // Login de un usuario
@@ -32,7 +33,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest user) {
         String token = authService.login(user);
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(token + "  <<Login Exitoso>>");
     }
 
     // Cambio de email
@@ -60,5 +61,7 @@ public class AuthController {
         authService.verifyEmail(code);
         return ResponseEntity.ok("Email verified successfully");
     }
+
+
 
 }

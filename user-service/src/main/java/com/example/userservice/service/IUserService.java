@@ -2,6 +2,7 @@ package com.example.userservice.service;
 
 import com.example.userservice.dto.entry.UserEntryDto;
 import com.example.userservice.dto.entry.UserRegisterRequest;
+import com.example.userservice.dto.exit.UserRegisterOutDto;
 import com.example.userservice.entity.User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,9 +18,10 @@ public interface IUserService {
 
     void deleteUser(Long userId);
     void updateUser(Long userId, UserEntryDto userEntryDto);
-    User createUserFromEvent(UserRegisterRequest request);
 
     void updateAlias(Long id, String alias );
     Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException;
     void updateUserEmail(Long id, String email);
+
+    UserRegisterOutDto handleRegister(UserRegisterRequest userEntryDto);
 }

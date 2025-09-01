@@ -46,7 +46,7 @@ public class AccountsController {
             @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
     })
     @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> createAccount(
+    public ResponseEntity<AccountResponse> createAccount(
             @RequestBody AccountCreationRequest request,
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @AuthenticationPrincipal Jwt jwt) {
@@ -56,24 +56,15 @@ public class AccountsController {
         if (authHeader != null && authHeader.equals("Bearer " + internalToken)) {
             LOGGER.info("✅ Solicitud interna autorizada con token interno.");
             AccountResponse response = accountsService.createAccount(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    Map.of(
-                            "message", "Cuenta creada exitosamente",
-                            "account", response
-                    )
-            );
+            return ResponseEntity.ok(response);
+            
         }
 
         if (jwt != null) {
             String email = jwt.getClaim("email");
             LOGGER.info("📥 Creando cuenta para usuario autenticado: {}", email);
             AccountResponse response = accountsService.createAccount(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    Map.of(
-                            "message", "Cuenta creada exitosamente",
-                            "account", response
-                    )
-            );
+            return ResponseEntity.ok(response);
         }
 
         LOGGER.warn("Intento de creación de cuenta sin autenticación válida.");

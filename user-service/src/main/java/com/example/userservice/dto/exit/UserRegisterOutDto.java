@@ -1,14 +1,15 @@
 package com.example.userservice.dto.exit;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.math.BigDecimal;
+
+@Data
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class UserRegisterOutDto {
 
     private Long id;
@@ -17,14 +18,15 @@ public class UserRegisterOutDto {
 
     private String lastName;
 
-    private int dni;
+    private String dni;
 
-    private int phone;
-
+    private String phone;
+    private Long authId;
+    private Long accountId;
     private String email;
 
     private String cvu;
-
+    private BigDecimal balance;
     private String alias;
     private String token;
 

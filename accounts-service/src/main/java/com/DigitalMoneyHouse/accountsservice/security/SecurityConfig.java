@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Deshabilitar CSRF para APIs
                 .authorizeHttpRequests(auth -> auth
                         // Permitir Swagger y docs abiertos
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/actuator/info").permitAll()
                         // Permitir endpoint de creación interna solo con token interno
                         .requestMatchers("/accounts/create").authenticated()
                         // Resto de endpoints requieren autenticación JWT
