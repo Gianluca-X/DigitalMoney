@@ -15,11 +15,11 @@ spring:
         format_sql: true
   config:
     import: "optional:configserver:"  # <--- Corrección aquí
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8080/realms/digitalmoneyhouse
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://localhost:8080/realms/digitalmoneyhouse
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
@@ -45,7 +45,7 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 jwt:
-  secret: MysecretClabe23
+  secret: MySuperSecretKeyWith32Bytes!!
 internal:
   token: secret-internal-token-123
 management:

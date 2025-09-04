@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="EurekaServerApplication" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="MAIN_CLASS_NAME" value="com.ProyectoFinalBackend.eureka_server.EurekaServerApplication" />
+    <module name="eureka-server" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.ProyectoFinalBackend.eureka_server.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -40,7 +40,7 @@ instance:
     healthCheckUrlPath: /actuator/health
 
 jwt:
-  secret: MysecretClabe23
+  secret: MySuperSecretKeyWith32Bytes!!
   expiration: 86400000 # 1 día en milisegundos
 logging:
   level:

@@ -8,35 +8,34 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final InternalTokenFilter internalTokenFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(InternalTokenFilter internalTokenFilter) {
+    public SecurityConfig(InternalTokenFilter internalTokenFilter, JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.internalTokenFilter = internalTokenFilter;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Deshabilitar CSRF para APIs
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Permitir Swagger y docs abiertos
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html","/actuator/info").permitAll()
-                        // Permitir endpoint de creación interna solo con token interno
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/info").permitAll()
                         .requestMatchers("/accounts/create").authenticated()
-                        // Resto de endpoints requieren autenticación JWT
                         .anyRequest().authenticated()
                 )
-                // Stateless, sin sesión
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Agregar filtro de token interno antes del filtro de Spring Security
-                .addFilterBefore(internalTokenFilter, UsernamePasswordAuthenticationFilter.class);
+                // primero el filtro de token interno
+                .addFilterBefore(internalTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                // después tu filtro JWT casero
+                .addFilterAfter(jwtAuthenticationFilter, InternalTokenFilter.class);
 
         return http.build();
     }
-
 }
+
