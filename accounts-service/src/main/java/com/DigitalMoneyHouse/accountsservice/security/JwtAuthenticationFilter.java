@@ -8,6 +8,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -27,25 +29,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private AccountsServiceImpl accountsServiceImpl;
 
+    // ✅ Evitar que este filtro corra en /accounts/create
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/accounts/create");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        logger.info("➡️ Request entrante: " + requestURI);
+        log.info("➡️ Request entrante: " + requestURI);
+
+        // ✅ Si ya hay autenticación (ej: InternalTokenFilter), no procesar más
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            log.info("⚡ Ya existe autenticación en el contexto, salto JwtAuthenticationFilter.");
+            chain.doFilter(request, response);
+            return;
+        }
 
         // Extraer token de la cabecera
         String token = extractToken(request);
         if (token == null) {
-            logger.error("❌ Token no presente en la cabecera Authorization");
+            log.error("❌ Token no presente en la cabecera Authorization");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token no presente");
             return;
         }
 
         // Validar token
         if (!validateToken(token)) {
-            logger.error("❌ Token inválido");
+            log.error("❌ Token inválido");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
             return;
         }
@@ -53,7 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Extraer email del token
         String email = extractEmailFromToken(token);
         if (email == null) {
-            logger.error("❌ No se pudo extraer el email del token");
+            log.error("❌ No se pudo extraer el email del token");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
             return;
         }
@@ -61,14 +76,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Verificar que el usuario exista en la base
         Account account = accountsServiceImpl.findByEmail(email);
         if (account != null && email.equals(account.getEmail())) {
-            logger.info("✅ Autenticación exitosa para: " + email);
+            log.info("✅ Autenticación exitosa para: " + email);
 
             // Setear autenticación en el contexto de Spring
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken(account, null, new ArrayList<>())
             );
         } else {
-            logger.error("❌ Autenticación fallida: email no coincide o cuenta no encontrada.");
+            log.error("❌ Autenticación fallida: email no coincide o cuenta no encontrada.");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Autenticación fallida");
             return;
         }
@@ -92,7 +107,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .parseClaimsJws(token); // si falla lanza excepción
             return true;
         } catch (Exception e) {
-            logger.error("Error al validar token: " + e.getMessage());
+            log.error("Error al validar token: " + e.getMessage());
             return false;
         }
     }
@@ -103,9 +118,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .setSigningKey(secretKey)
                     .parseClaimsJws(token)
                     .getBody();
-            return claims.getSubject(); // el "sub" es el email que pusiste al generarlo
+            return claims.getSubject(); // el "sub" es el email
         } catch (Exception e) {
-            logger.error("Error al extraer email del token: " + e.getMessage());
+            log.error("Error al extraer email del token: " + e.getMessage());
             return null;
         }
     }

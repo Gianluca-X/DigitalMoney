@@ -45,9 +45,9 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 jwt:
-  secret: MySuperSecretKeyWith32Bytes!!
+  secret: mySuperUltraSecretKeyForJWTGeneration123456!
 internal:
-  token: secret-internal-token-123
+  token: super-secret-internal-token-123
 management:
   endpoints:
     web:

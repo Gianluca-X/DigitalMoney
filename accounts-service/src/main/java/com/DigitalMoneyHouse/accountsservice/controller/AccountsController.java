@@ -12,8 +12,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-
+@Slf4j
 @RestController
 @RequestMapping("/accounts")
 public class AccountsController {
@@ -30,6 +32,8 @@ public class AccountsController {
 
     private final AccountsServiceImpl accountsService;
     private final AccountsRepository accountsRepository;
+    @Value("${internal.token}")
+    private String internalToken;
 
     public AccountsController(AccountsServiceImpl accountsService, AccountsRepository accountsRepository) {
         this.accountsService = accountsService;
@@ -51,7 +55,6 @@ public class AccountsController {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @AuthenticationPrincipal Jwt jwt) {
 
-        String internalToken = "secret-internal-token-123"; // inyectalo con @Value en prod
 
         if (authHeader != null && authHeader.equals("Bearer " + internalToken)) {
             LOGGER.info("✅ Solicitud interna autorizada con token interno.");
