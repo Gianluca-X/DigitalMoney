@@ -44,7 +44,7 @@ public class AuthController {
             Authentication authentication
     ) {
         String currentEmail = authentication.getName(); // viene del token (subject)
-        authService.changeEmail( newEmail);
+        authService.changeEmail(newEmail);
         return ResponseEntity.ok("Email updated successfully");
     }
 
@@ -55,12 +55,16 @@ public class AuthController {
         authService.changePassword(newPassword);
         return ResponseEntity.ok("Password updated successfully");
     }
-    @Operation(summary = "verificar correo",description = "verifica su correo")
-    @PatchMapping("/verify")
+    @GetMapping("/verify")
     public ResponseEntity<String> verify(@RequestParam String code) {
-        authService.verifyEmail(code);
-        return ResponseEntity.ok("Email verified successfully");
+        try {
+            authService.verifyEmail(code);
+            return ResponseEntity.ok("✅ Email verified successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 
 
 

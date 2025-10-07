@@ -76,7 +76,7 @@ class AuthServiceTest {
         assertEquals("mocked-token", response.getToken());
 
         // Verificamos que se haya enviado el email
-        verify(emailService).sendVerificationEmail(eq(entry.getEmail()), any(String.class));
+        verify(emailService).sendVerificationEmail(eq(entry.getEmail()), savedUser.getVerificationCode(), any(String.class));
 
         // Si publicás eventos, verificamos que se llame al publicador
     }

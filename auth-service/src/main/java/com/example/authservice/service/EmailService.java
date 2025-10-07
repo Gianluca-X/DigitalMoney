@@ -18,11 +18,11 @@ public class EmailService {
         mailSender.send(message);
     }
 
-    public void sendVerificationEmail(String email, String verificationCode) {
+    public void sendVerificationEmail(String email, String verificationCode, String verificationLink) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("Verify your email for Digital Money House");
-        message.setText("Your verification code is: " + verificationCode);
+        message.setText("Your verification code is: " + verificationCode + " Click to verify your email: " + verificationLink);
         mailSender.send(message);
     }
 }

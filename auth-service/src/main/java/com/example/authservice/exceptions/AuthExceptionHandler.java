@@ -12,7 +12,10 @@ public class AuthExceptionHandler {
     public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
-
+    @ExceptionHandler(InvalidVerificationCodeException.class)
+    public ResponseEntity<String> handleInvalidVerificationCode(InvalidVerificationCodeException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<String> handleInvalidPassword(InvalidPasswordException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
