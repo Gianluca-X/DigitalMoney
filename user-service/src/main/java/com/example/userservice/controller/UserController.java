@@ -56,7 +56,7 @@
         @DeleteMapping("/delete/{userId}")
         public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
             iuserService.deleteUser(userId);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok("Usuario eliminado con id " + userId);
         }
     
         @PatchMapping("/update/alias/{id}")
