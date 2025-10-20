@@ -107,9 +107,11 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public User getUserById(Long id, @AuthenticationPrincipal Jwt jwt) {
+        logger.info("Entrando al metodo get user by id " + id + " jwt" + jwt);
+
         if (jwt != null) {
             // Si el JWT está presente, usas el correo del JWT para obtener el usuario
-            String email = jwt.getClaim("email");
+            String email = jwt.getSubject();
             logger.info("📥 Buscando usuario autenticado con email: " + email);
 
             User userBuscado = userRepository.findByEmail(email)
@@ -118,6 +120,7 @@ public class UserServiceImpl implements IUserService {
             return modelMapper.map(userBuscado, User.class);
         } else {
             // Si el JWT no está presente, obtienes el usuario por ID
+            logger.info("entrando al else no hay jwt presente" + " " + jwt + " " + id);
             User userBuscado = userRepository.findById(id)
                     .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado p0r id"));
 
@@ -132,14 +135,14 @@ public class UserServiceImpl implements IUserService {
 
     public void updateUser(Long userId, @NonNull UserEntryDto userEntryDto) {
         User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         modelMapper.map(userEntryDto, existingUser);
         userRepository.save(existingUser);
     }
     public void updateUserEmail(Long userId, String newEmail) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         user.setEmail(newEmail);
         userRepository.save(user);

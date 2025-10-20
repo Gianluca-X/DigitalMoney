@@ -11,9 +11,6 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserEntryDto {
-        //@NotNull(message = "El username del usuario no puede ser nulo")
-        //@NotBlank(message = "Debe especificarse el username del usuario")
-        //private String userName;
         @NotNull(message = "El nombre del usuario no puede ser nulo")
         @NotBlank(message = "Debe especificarse el nombre del usuario")
         private String firstName;

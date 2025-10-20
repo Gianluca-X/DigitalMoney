@@ -9,7 +9,7 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
-    private final String SECRET_KEY = "MysecretClabe23"; // leelo desde application.yml
+    private final String SECRET_KEY = "mySuperUltraSecretKeyForJWTGeneration123456!"; // leelo desde application.yml
 
     // ✅ Extrae claims del token
     public Claims extractClaims(String token) {

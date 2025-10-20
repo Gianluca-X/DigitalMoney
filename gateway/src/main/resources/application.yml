@@ -1,14 +1,8 @@
 spring:
   application:
     name: gateway-service
-  config:
-    import: "optional:configserver:"
+
   cloud:
-    config:
-      uri: http://localhost:8888/
-      discovery:
-        serviceId: config-server
-      enabled: false 
     gateway:
       globalcors:
         corsConfigurations:
@@ -31,24 +25,24 @@ spring:
             maxAge: 3600
       routes:
         - id: auth-service
-          uri: http://localhost:8082
+          uri: lb://auth-service
           predicates:
             - Path=/auth/**
         - id: user-service
-          uri: http://localhost:8087
+          uri: lb://user-service
           predicates:
             - Path=/users/**
         - id: accounts-service
-          uri: http://localhost:8084
+          uri: lb://accounts-service
           predicates:
             - Path=/accounts/**
-          filters:
-            - TokenRelay
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/digitalmoneyhouse
+          secret: mySuperSecretKey123   # 👈 debe coincidir con jwt.secret en AuthService
+
 management:
   endpoints:
     web:
@@ -65,14 +59,14 @@ info:
     version: 1.0.0
 
 eureka:
-  instance:
-    statusPageUrlPath: /actuator/info
-    healthCheckUrlPath: /actuator/info
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    preferIpAddress: true
 
 server:
   port: 8085
+
 main:
   allow-bean-definition-overriding: true
