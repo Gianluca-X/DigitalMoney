@@ -27,4 +27,5 @@ public class UserRegisterRequest {
 
     @NotBlank(message = "La contraseña es obligatoria")
     private String password;
+    
 }

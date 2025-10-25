@@ -1,9 +1,12 @@
 package com.example.userservice.dto.entry;
 
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.FetchType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -30,6 +33,6 @@ public class UserEntryDto {
         @NotBlank(message = "Debe especificarse la contraseña del usuario")
         private String password;
         private Long authId;
-        private Set<String> roles;
+        private String role;
 
     }

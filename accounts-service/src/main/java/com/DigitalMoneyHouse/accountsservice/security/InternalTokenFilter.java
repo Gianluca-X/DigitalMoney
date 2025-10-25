@@ -19,13 +19,12 @@ public class InternalTokenFilter extends OncePerRequestFilter {
 
     @Value("${internal.token}")
     private String internalToken;
-
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Filtra solo la ruta de creación de cuentas
         String path = request.getRequestURI();
-        log.info("Shouldnotfilter");
-        return !path.startsWith("/accounts/create");
+        boolean skip = !path.startsWith("/accounts/create");
+        log.info("Should not filter for {}: {}", path, skip);
+        return skip;
     }
 
     @Override

@@ -80,7 +80,7 @@ public class CardController {
             }
 
             String jwtToken = token.replace("Bearer ", "");
-            CardOutDTO newCard = cardServiceImpl.createCard(accountId, createCardEntryDTO, jwtToken);
+            CardOutDTO newCard = cardServiceImpl.createCard(accountId, createCardEntryDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(newCard);
         } catch (CardAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);

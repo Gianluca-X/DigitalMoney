@@ -4,9 +4,7 @@ import com.DigitalMoneyHouse.accountsservice.dto.entry.CreateCardEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.CardOutDTO;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Card;
-import com.DigitalMoneyHouse.accountsservice.exceptions.CardAlreadyExistsException;
-import com.DigitalMoneyHouse.accountsservice.exceptions.CardNotFoundException;
-import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
+import com.DigitalMoneyHouse.accountsservice.exceptions.*;
 import com.DigitalMoneyHouse.accountsservice.repository.AccountsRepository;
 import com.DigitalMoneyHouse.accountsservice.repository.CardRepository;
 import com.DigitalMoneyHouse.accountsservice.service.ICardService;
@@ -62,7 +60,7 @@ public class CardServiceImpl implements ICardService {
     }
 
     public CardOutDTO createCard(Long accountId, CreateCardEntryDTO createCardEntryDTO)
-            throws CardAlreadyExistsException, ResourceNotFoundException {
+            throws CardAlreadyExistsException, ResourceNotFoundException, BadRequestException {
 
         String email = extractEmailFromSecurityContext();
         if (email == null) {
@@ -76,7 +74,10 @@ public class CardServiceImpl implements ICardService {
         }
 
         if (!account.getId().equals(accountId)) {
-            throw new AccessDeniedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
+            throw new UnauthorizedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
+        }
+        if (createCardEntryDTO.getNumber() == null || createCardEntryDTO.getNumber().isBlank()) {
+            throw new BadRequestException("El número de la tarjeta no puede estar vacío");
         }
 
         Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());
@@ -104,12 +105,18 @@ public class CardServiceImpl implements ICardService {
     }
 
     private String extractEmailFromSecurityContext() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof Jwt jwt) {
-            return jwt.getClaim("email");
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof Account account) {
+                return account.getEmail();
+            } else if (principal instanceof String username) {
+                return username;
+            }
         }
         return null;
     }
+
     // Método alternativo solo para pruebas unitarias (sin usar SecurityContextHolder)
     public CardOutDTO createCardWithEmail(Long accountId, CreateCardEntryDTO createCardEntryDTO, String email)
             throws CardAlreadyExistsException, ResourceNotFoundException {
@@ -124,7 +131,7 @@ public class CardServiceImpl implements ICardService {
         }
 
         if (!account.getId().equals(accountId)) {
-            throw new AccessDeniedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
+            throw new UnauthorizedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
         }
 
         Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());

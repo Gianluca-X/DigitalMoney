@@ -2,7 +2,15 @@ spring:
   application:
     name: gateway-service
 
+  config:
+    import: "optional:configserver:"
   cloud:
+    config:
+      uri: http://localhost:8888/
+      discovery:
+        serviceId: config-server
+      enabled: false
+
     gateway:
       globalcors:
         corsConfigurations:

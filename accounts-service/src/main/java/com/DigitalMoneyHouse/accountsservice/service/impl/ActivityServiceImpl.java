@@ -7,6 +7,7 @@ import com.DigitalMoneyHouse.accountsservice.dto.exit.ActivityOutDTO;
 
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Activity;
+import com.DigitalMoneyHouse.accountsservice.exceptions.BadRequestException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
 import com.DigitalMoneyHouse.accountsservice.repository.AccountsRepository;
 import com.DigitalMoneyHouse.accountsservice.repository.ActivityRepository;
@@ -72,7 +73,12 @@ public class ActivityServiceImpl implements IActivityService {
         return modelMapper.map(activity, ActivityOutDTO.class);
     }
 
-    public List<ActivityOutDTO> filterActivities(ActivityFilterEntryDTO filter) {
+    public List<ActivityOutDTO> filterActivities(ActivityFilterEntryDTO filter) throws BadRequestException {
+        if (filter.getStartDate() != null && filter.getEndDate() != null &&
+                filter.getStartDate().isAfter(filter.getEndDate())) {
+            throw new BadRequestException("La fecha inicial no puede ser posterior a la final.");
+        }
+
         // Establecer valores predeterminados para montos si no se proporcionan
         BigDecimal minAmount = filter.getMinAmount() != null ? filter.getMinAmount() : BigDecimal.ZERO;
         BigDecimal maxAmount = filter.getMaxAmount() != null ? filter.getMaxAmount() : BigDecimal.valueOf(1000000000);

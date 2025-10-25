@@ -4,6 +4,7 @@ import com.example.userservice.aliasGenerator.AliasGenerator;
 import com.example.userservice.dto.AuthResponse;
 import com.example.userservice.dto.entry.*;
 import com.example.userservice.dto.exit.UserRegisterOutDto;
+import com.example.userservice.entity.Role;
 import com.example.userservice.exceptions.*;
 import com.example.userservice.generatorCVU.GeneratorCVU;
 import com.example.userservice.entity.User;
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -128,18 +130,47 @@ public class UserServiceImpl implements IUserService {
         }
     }
 
-
+    @Override
+    @Transactional
     public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con id: " + userId));
+
+        try {
+            userRepository.delete(user);
+            log.info("🗑️ Usuario eliminado correctamente: {}", userId);
+        } catch (DataIntegrityViolationException e) {
+            log.error("❌ No se puede eliminar el usuario {}: tiene relaciones activas (FK)", userId, e);
+            throw new RuntimeException("No se puede eliminar el usuario: tiene dependencias activas (cuentas u otros registros)");
+        }
     }
+
 
     public void updateUser(Long userId, @NonNull UserEntryDto userEntryDto) {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        modelMapper.map(userEntryDto, existingUser);
+        // No uses ModelMapper directamente porque puede pisar el ID o campos nulos.
+        if (userEntryDto.getFirstName() != null)
+            existingUser.setFirstName(userEntryDto.getFirstName());
+        if (userEntryDto.getLastName() != null)
+            existingUser.setLastName(userEntryDto.getLastName());
+        if (userEntryDto.getPhone() != null)
+            existingUser.setPhone(userEntryDto.getPhone());
+        if (userEntryDto.getDni() != null)
+            existingUser.setDni(userEntryDto.getDni());
+        if (userEntryDto.getEmail() != null)
+            existingUser.setEmail(userEntryDto.getEmail());
+        if (userEntryDto.getRole() != null) {
+            try {
+                existingUser.setRole(Role.valueOf(userEntryDto.getRole().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Rol inválido: " + userEntryDto.getRole());
+            }
+        }
         userRepository.save(existingUser);
     }
+
     public void updateUserEmail(Long userId, String newEmail) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));

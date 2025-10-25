@@ -41,7 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/users/public/**").permitAll()
                         .requestMatchers(HttpMethod.POST,"/users/register").permitAll()
                         .requestMatchers("/users/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 // 👇 tu filtro personalizado para validar el JWT

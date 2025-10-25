@@ -4,6 +4,7 @@ import com.DigitalMoneyHouse.accountsservice.dto.entry.ActivityFilterEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.ActivityOutDTO;
 
 import com.DigitalMoneyHouse.accountsservice.entities.Activity;
+import com.DigitalMoneyHouse.accountsservice.exceptions.BadRequestException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.InvalidTokenException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
 import com.DigitalMoneyHouse.accountsservice.service.impl.ActivityServiceImpl;
@@ -91,7 +92,7 @@ public class ActivityController {
     @PostMapping("/filter")
     public ResponseEntity<List<ActivityOutDTO>> filterActivities(
             @PathVariable Long accountId,
-            @RequestBody ActivityFilterEntryDTO filter) {
+            @RequestBody ActivityFilterEntryDTO filter) throws BadRequestException {
         List<ActivityOutDTO> activities = activityServiceImpl.filterActivities(filter);
         return ResponseEntity.ok(activities); // 200 OK
     }
