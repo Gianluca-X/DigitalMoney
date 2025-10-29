@@ -58,11 +58,11 @@
 ## 🛣️ Endpoints Principales
 
 ### 🔑 Auth Service
-- `POST /auth/register` → Registrar nuevo usuario  
 - `POST /auth/login` → Iniciar sesión  
 - `POST /auth/logout` → Cerrar sesión  
 
 ### 👤 User Service
+- `POST /users/register` → Registrar nuevo usuario  
 - `GET /users/{id}` → Obtener datos del usuario  
 - `PUT /users/{id}` → Editar datos personales  
 
@@ -85,7 +85,7 @@
 
 - **Testing manual:** Se realizaron pruebas exploratorias con Postman.  
 - **Testing automatizado:** JUnit y RestAssured (`mvn test`).  
-- **Drive con documentación de testing:** [Enlace a Google Drive](https://drive.google.com/drive/folders/1opUoRVye9heD8I8p3zUgNyAjeuttQmXP) _(actualizar)_  
+- **Drive con documentación de testing:** [Enlace a Google Drive](https://drive.google.com/drive/folders/1opUoRVye9heD8I8p3zUgNyAjeuttQmXP) 
 
 ---
 
