@@ -85,7 +85,7 @@
 
 - **Testing manual:** Se realizaron pruebas exploratorias con Postman.  
 - **Testing automatizado:** JUnit y RestAssured (`mvn test`).  
-- **Drive con documentación de testing:** [Enlace a Google Drive](https://drive.google.com/) _(actualizar)_  
+- **Drive con documentación de testing:** [Enlace a Google Drive](https://drive.google.com/drive/folders/1opUoRVye9heD8I8p3zUgNyAjeuttQmXP) _(actualizar)_  
 
 ---
 
