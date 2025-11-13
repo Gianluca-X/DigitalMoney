@@ -1,88 +1,94 @@
-    package com.example.userservice.controller;
-    
-    import com.example.userservice.dto.entry.UserEntryDto;
-    import com.example.userservice.dto.entry.UserRegisterRequest;
-    import com.example.userservice.dto.exit.UserRegisterOutDto;
-    import com.example.userservice.dto.modification.UserAliasUpdateRequest;
-    import com.example.userservice.entity.User;
-    import com.example.userservice.service.IUserService;
-    import com.example.userservice.service.impl.UserServiceImpl;
-    import io.swagger.v3.oas.annotations.Operation;
-    import io.swagger.v3.oas.annotations.media.Content;
-    import io.swagger.v3.oas.annotations.media.Schema;
-    import io.swagger.v3.oas.annotations.responses.ApiResponse;
-    import io.swagger.v3.oas.annotations.responses.ApiResponses;
-    import jakarta.validation.Valid;
-    import lombok.RequiredArgsConstructor;
-    import org.springframework.beans.factory.annotation.Autowired;
-    import org.springframework.http.ResponseEntity;
-    import org.springframework.security.core.annotation.AuthenticationPrincipal;
-    import org.springframework.security.oauth2.jwt.Jwt;
-    import org.springframework.web.bind.annotation.*;
-    
-    import java.io.IOException;
-    import java.util.Map;
-    
-    @RestController
-    @RequestMapping("/users")
-    @RequiredArgsConstructor
-    public class UserController {
-    
-        private final IUserService iuserService;
-        @ApiResponses(value = {
-                @ApiResponse(responseCode = "201", description = "Cuenta creada correctamente", content = @Content),
-                @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content),
-                @ApiResponse(responseCode = "401", description = "No autorizado", content = @Content),
-                @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
-        })
-        @PostMapping("/register")
-        public ResponseEntity<UserRegisterOutDto> register(@Valid @RequestBody UserRegisterRequest request) {
-            UserRegisterOutDto result = iuserService.handleRegister(request);
-            return ResponseEntity.status(201).body(result);
-        }
+package com.example.userservice.controller;
 
+import com.example.userservice.dto.entry.UserEntryDto;
+import com.example.userservice.dto.entry.UserRegisterRequest;
+import com.example.userservice.dto.modification.UserAliasUpdateRequest;
+import com.example.userservice.dto.exit.UserRegisterOutDto;
+import com.example.userservice.entity.User;
+import com.example.userservice.exceptions.UnauthorizedException;
+import com.example.userservice.service.IUserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+@Slf4j
+@RestController
+@RequestMapping("/users")
+@RequiredArgsConstructor
+public class UserController {
 
-        @GetMapping("/{id}")
-        public ResponseEntity<User> getUser(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-            return ResponseEntity.ok(iuserService.getUserById(id, jwt));
-        }
-    
-        @PutMapping("/update/{userId}")
-        public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody UserEntryDto dto) {
-            iuserService.updateUser(userId, dto);
-            return ResponseEntity.ok("Usuario actualizado");
-        }
-    
-        @DeleteMapping("/delete/{userId}")
-        public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
-            iuserService.deleteUser(userId);
-            return ResponseEntity.ok("Usuario eliminado con id " + userId);
-        }
-    
-        @PatchMapping("/update/alias/{id}")
-        public ResponseEntity<?> updateAlias(@PathVariable Long id, @RequestBody UserAliasUpdateRequest request) {
-            iuserService.updateAlias(id, request.getAlias());
-            return ResponseEntity.ok("Alias actualizado");
-        }
-        @PostMapping("/logout")
-        public ResponseEntity<String> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-            try {
-                if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                    return ResponseEntity.badRequest().body("Token no proporcionado");
-                }
+    private final IUserService userService;
 
-                String token = authHeader.substring(7); // quitar "Bearer "
-
-                // Opcional: agregar token a blacklist para invalidarlo antes de que expire
-                // jwtBlacklistService.add(token);
-
-                System.out.println("🔒 Logout exitoso para token: " + token);
-
-                return ResponseEntity.ok("Logout exitoso");
-            } catch (Exception e) {
-                e.printStackTrace();
-                return ResponseEntity.status(500).body("Error interno del servidor");
-            }
-        }
-
+    @PostMapping("/register")
+    public ResponseEntity<UserRegisterOutDto> register(@RequestBody UserRegisterRequest request) {
+        return ResponseEntity.status(201).body(userService.handleRegister(request));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUser(
+            @PathVariable Long id,
+            @AuthenticationPrincipal String email,
+            Authentication auth) {
+
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o ausente");
+        }
+
+        checkOwnerOrAdmin(email, auth, id);
+        return ResponseEntity.ok(userService.getUserById(id, email));
+    }
+
+    @PutMapping("/update/{userId}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UserEntryDto dto,
+            @AuthenticationPrincipal String email,
+            Authentication auth) {
+
+        checkOwnerOrAdmin(email, auth, userId);
+        userService.updateUser(userId, dto, email);
+        return ResponseEntity.ok("Usuario actualizado");
+    }
+
+    @PatchMapping("/update/alias/{id}")
+    public ResponseEntity<?> updateAlias(
+            @PathVariable Long id,
+            @RequestBody UserAliasUpdateRequest request,
+            @AuthenticationPrincipal String email,
+            Authentication auth) {
+
+        checkOwnerOrAdmin(email, auth, id);
+        userService.updateAlias(id, request.getAlias(), email);
+        return ResponseEntity.ok("Alias actualizado");
+    }
+
+    @DeleteMapping("/delete/{userId}")
+    public ResponseEntity<String> deleteUser(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal String email,
+            Authentication auth) {
+
+        checkOwnerOrAdmin(email, auth, userId);
+        userService.deleteUser(userId, email);
+        return ResponseEntity.ok("Usuario eliminado");
+    }
+
+    private void checkOwnerOrAdmin(String email, Authentication auth, Long targetUserId) {
+
+        if (email == null)
+            throw new UnauthorizedException("Token inválido");
+        String role = auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        log.info(role + "role");
+        if ("ADMIN".equalsIgnoreCase(role)) return;
+
+        User user = userService.getUserById(targetUserId, email);
+
+        if (!user.getEmail().equals(email)) {
+            throw new UnauthorizedException("No tienes permisos para esta acción");
+        }
+    }
+}

@@ -5,64 +5,63 @@ import com.example.userservice.dto.AuthResponse;
 import com.example.userservice.dto.entry.*;
 import com.example.userservice.dto.exit.UserRegisterOutDto;
 import com.example.userservice.entity.Role;
-import com.example.userservice.exceptions.*;
-import com.example.userservice.generatorCVU.GeneratorCVU;
 import com.example.userservice.entity.User;
+import com.example.userservice.exceptions.DniAlreadyExistsException;
+import com.example.userservice.exceptions.EmailAlreadyRegisteredException;
+import com.example.userservice.exceptions.UnauthorizedException;
+import com.example.userservice.exceptions.UserNotFoundException;
+import com.example.userservice.generatorCVU.GeneratorCVU;
 import com.example.userservice.repository.UserRepository;
 import com.example.userservice.service.IUserService;
 import com.example.userservice.service.client.AccountClient;
 import com.example.userservice.service.client.AuthClient;
 import jakarta.ws.rs.BadRequestException;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Map;
 
 @Service
 @Slf4j
 public class UserServiceImpl implements IUserService {
-    private final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final AccountClient accountClient;
     private final AuthClient authClient;
 
-    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, AccountClient accountClient, AuthClient authClient) {
+    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper,
+                           AccountClient accountClient, AuthClient authClient) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.accountClient = accountClient;
         this.authClient = authClient;
     }
+
+    // ✅ REGISTRO COMPLETO
     @Override
     @Transactional
     public UserRegisterOutDto handleRegister(UserRegisterRequest request) {
+
         if (userRepository.existsByEmail(request.getEmail())) {
-            log.warn("El usuario con email {} ya existe. No se creará de nuevo.", request.getEmail());
-            throw new EmailAlreadyRegisteredException("El email " + request.getEmail() + " ya está registrado");
+            throw new EmailAlreadyRegisteredException("El email ya está registrado");
         }
-
-
-        // 1️⃣ Registrar en AuthService para obtener authId
+        if (userRepository.existsByDni(request.getDni())){
+           throw new DniAlreadyExistsException("El DNI ingresado ya esta registrado");
+        }
+        // 🔐 Registrar en AuthService
         UserRegisterAuthRequest authRequest = new UserRegisterAuthRequest();
         authRequest.setEmail(request.getEmail());
-        authRequest.setPassword(request.getPassword()); // Se enviará solo al auth service
+        authRequest.setPassword(request.getPassword());
 
         AuthResponse authResponse = authClient.registerUser(authRequest);
 
-        // 2️⃣ Crear usuario en UserService
-        String alias = generateUniqueAlias();
-        String cvu = GeneratorCVU.generateCVU();
-
+        // 🧍 Crear usuario en UserService
         User user = new User();
         user.setAuthId(authResponse.getAuthId());
         user.setEmail(request.getEmail());
@@ -70,132 +69,149 @@ public class UserServiceImpl implements IUserService {
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setDni(request.getDni());
-        user.setAlias(alias);
-        user.setCvu(cvu);
+        user.setAlias(generateUniqueAlias());
+        user.setCvu(GeneratorCVU.generateCVU());
 
-        User savedUser = userRepository.save(user);
+        User saved = userRepository.save(user);
 
-        // 3️⃣ Crear cuenta en Account Service
-        AccountCreationRequest accountRequest = new AccountCreationRequest();
-        accountRequest.setUserId(savedUser.getId());
-        accountRequest.setEmail(savedUser.getEmail());
-        accountRequest.setAlias(savedUser.getAlias());
-        accountRequest.setCvu(savedUser.getCvu());
-        accountRequest.setInitialBalance(BigDecimal.ZERO);
+        // 💳 Crear cuenta en AccountService
+        AccountCreationRequest accountReq = new AccountCreationRequest();
+        accountReq.setUserId(saved.getId());
+        accountReq.setEmail(saved.getEmail());
+        accountReq.setAlias(saved.getAlias());
+        accountReq.setCvu(saved.getCvu());
+        accountReq.setInitialBalance(BigDecimal.ZERO);
 
-        AccountResponse accountResponse = accountClient.createAccount(accountRequest);
-        savedUser.setAccountId(accountResponse.getId());
-        userRepository.save(savedUser);
+        var accountResp = accountClient.createAccount(accountReq);
+        saved.setAccountId(accountResp.getId());
+        userRepository.save(saved);
 
-        log.info("👤 Usuario creado con authId: {}", authResponse.getAuthId());
-        log.info("Cuenta Creada con account id: " + accountResponse.getId());
-        // Luego, devolver algo como:
         return UserRegisterOutDto.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .dni(user.getDni())
-                .phone(user.getPhone())
-                .authId(user.getAuthId())
-                .accountId(accountResponse.getId())
-                .email(user.getEmail())
-                .cvu(user.getCvu())
-                .alias(user.getAlias())
-                .balance(accountResponse.getBalance())
+                .id(saved.getId())
+                .firstName(saved.getFirstName())
+                .lastName(saved.getLastName())
+                .dni(saved.getDni())
+                .phone(saved.getPhone())
+                .authId(saved.getAuthId())
+                .accountId(accountResp.getId())
+                .email(saved.getEmail())
+                .cvu(saved.getCvu())
+                .alias(saved.getAlias())
+                .balance(accountResp.getBalance())
                 .token(authResponse.getToken())
                 .build();
-
     }
 
+    // ✅ GET USER — compara email del token
     @Override
-    public User getUserById(Long id, @AuthenticationPrincipal Jwt jwt) {
-        logger.info("Entrando al metodo get user by id " + id + " jwt" + jwt);
+    public User getUserById(Long id, String email) {
 
-        if (jwt != null) {
-            // Si el JWT está presente, usas el correo del JWT para obtener el usuario
-            String email = jwt.getSubject();
-            logger.info("📥 Buscando usuario autenticado con email: " + email);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-            User userBuscado = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado by mail"));
 
-            return modelMapper.map(userBuscado, User.class);
-        } else {
-            // Si el JWT no está presente, obtienes el usuario por ID
-            logger.info("entrando al else no hay jwt presente" + " " + jwt + " " + id);
-            User userBuscado = userRepository.findById(id)
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado p0r id"));
-
-            return modelMapper.map(userBuscado, User.class);
-        }
+        return user;
     }
 
+    // ✅ DELETE USER — dueño o admin (validación la hace controller)
     @Override
-    @Transactional
-    public void deleteUser(Long userId) {
+    public void deleteUser(Long userId, String email) {
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con id: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+        if (!user.getEmail().equals(email)) {
+            throw new UnauthorizedException("No puedes borrar otro usuario");
+        }
 
         try {
+            if (user.getAccountId() != null) {
+                accountClient.deleteAccount(user.getAccountId());
+            }
+            if (user.getAuthId() != null){
+            authClient.deleteUserAuth(user.getAuthId());
+            }
             userRepository.delete(user);
-            log.info("🗑️ Usuario eliminado correctamente: {}", userId);
         } catch (DataIntegrityViolationException e) {
-            log.error("❌ No se puede eliminar el usuario {}: tiene relaciones activas (FK)", userId, e);
-            throw new RuntimeException("No se puede eliminar el usuario: tiene dependencias activas (cuentas u otros registros)");
+            throw new RuntimeException("No se puede eliminar: dependencias activas");
         }
     }
 
+    @Override
+    public void updateUser(Long userId, UserEntryDto dto, String email) {
 
-    public void updateUser(Long userId, @NonNull UserEntryDto userEntryDto) {
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        // No uses ModelMapper directamente porque puede pisar el ID o campos nulos.
-        if (userEntryDto.getFirstName() != null)
-            existingUser.setFirstName(userEntryDto.getFirstName());
-        if (userEntryDto.getLastName() != null)
-            existingUser.setLastName(userEntryDto.getLastName());
-        if (userEntryDto.getPhone() != null)
-            existingUser.setPhone(userEntryDto.getPhone());
-        if (userEntryDto.getDni() != null)
-            existingUser.setDni(userEntryDto.getDni());
-        if (userEntryDto.getEmail() != null)
-            existingUser.setEmail(userEntryDto.getEmail());
-        if (userEntryDto.getRole() != null) {
+        if (!user.getEmail().equals(email)) {
+            throw new UnauthorizedException("No puedes modificar otro usuario");
+        }
+
+        if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
+        if (dto.getLastName() != null) user.setLastName(dto.getLastName());
+        if (dto.getPhone() != null) user.setPhone(dto.getPhone());
+        if (dto.getDni() != null) user.setDni(dto.getDni());
+// ✅ Si se quiere actualizar email o role
+        boolean updateEmail = dto.getEmail() != null && !dto.getEmail().equals(user.getEmail());
+        boolean updateRole  = dto.getRole() != null;
+        if (updateEmail && userRepository.existsByEmail(dto.getEmail())) {
+            throw new EmailAlreadyRegisteredException("El email nuevo ya está registrado");
+        }
+
+        if (updateEmail || updateRole) {
+
+            UserUpdateRequest authRequest = new UserUpdateRequest();
+
+            if (updateEmail) {
+                authRequest.setEmail(dto.getEmail());
+            }
+
+            if (updateRole) {
+                authRequest.setRole(dto.getRole());
+            }
+            authRequest.setId(user.getAuthId());
+            // ✅ Actualizar en AuthService primero
+            log.info(authRequest.getRole() + " update user " + authRequest.getUserId() + " " + authRequest.getEmail());
             try {
-                existingUser.setRole(Role.valueOf(userEntryDto.getRole().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException("Rol inválido: " + userEntryDto.getRole());
+                 authClient.updateUserAuth(authRequest);
+                log.info("✅ Llamada a AuthService enviada correctamente");
+            } catch (Exception e) {
+                log.error("❌ Error Feign al llamar a AuthService: {}", e.getMessage(), e);
+            }
+            // ✅ Solo aplicar cambios locales si AuthService dijo OK
+            if (updateEmail) {
+                user.setEmail(dto.getEmail());
+            }
+            if (updateRole) {
+                user.setRole(dto.getRole());
             }
         }
-        userRepository.save(existingUser);
-    }
 
-    public void updateUserEmail(Long userId, String newEmail) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        user.setEmail(newEmail);
         userRepository.save(user);
     }
 
 
+    @Override
+    public void updateAlias(Long id, String alias, String email) {
 
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
+        if (!user.getEmail().equals(email)) {
+            throw new UnauthorizedException("No puedes modificar el alias de otro usuario");
+        }
 
-    public void updateAlias(Long id, String alias) {
         if (alias == null || alias.trim().isEmpty()) {
-            throw new BadRequestException("El alias no puede estar vacío");
+            throw new BadRequestException("Alias vacío");
         }
 
-        int updatedRows = userRepository.updateAlias(id, alias);
-        if (updatedRows == 0) {
-            throw new UserNotFoundException("Usuario no encontrado");
-        }
+        user.setAlias(alias);
+        userRepository.save(user);
     }
+
     @Override
     public Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException {
-        return null;
+        throw new UnsupportedOperationException("No implementado — usar handleRegister()");
     }
 
     private String generateUniqueAlias() {
@@ -203,6 +219,7 @@ public class UserServiceImpl implements IUserService {
         do {
             alias = AliasGenerator.generateAlias();
         } while (userRepository.existsByAlias(alias));
+
         return alias;
     }
 }

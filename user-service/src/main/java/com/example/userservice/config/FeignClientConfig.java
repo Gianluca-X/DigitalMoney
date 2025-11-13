@@ -1,5 +1,6 @@
 package com.example.userservice.config;
 
+import feign.Logger;
 import feign.RequestInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -9,39 +10,43 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Collections;
-import java.util.Enumeration;
-
 @Slf4j
 @Configuration
 public class FeignClientConfig {
 
     @Value("${internal.token}")
     private String internalToken;
+
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
-            log.info("Agregando header interno para microservicio");
+            HttpServletRequest request = getCurrentHttpRequest();
+            String authHeader = null;
 
-            requestTemplate.header("Authorization", "Bearer " + internalToken);
+            if (request != null) {
+                authHeader = request.getHeader("Authorization");
+            }
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                // ✅ Si hay un token real del usuario → propagarlo
+                log.info("Propagando token real del usuario hacia {}", requestTemplate.path());
+                requestTemplate.header("Authorization", authHeader);
+            } else {
+                // 🛡️ Si no hay token (llamada interna) → usar internalToken
+                log.info("Usando token interno para llamada Feign a {}", requestTemplate.path());
+                requestTemplate.header("Authorization", "Bearer " + internalToken);
+            }
         };
     }
 
-
-    /**
-     * Convierte los headers de la petición en un string para debugging
-     */
-    private String getHeadersAsString(HttpServletRequest request) {
-        StringBuilder headers = new StringBuilder();
-        Enumeration<String> headerNames = request.getHeaderNames();
-
-        if (headerNames != null) {
-            while (headerNames.hasMoreElements()) {
-                String header = headerNames.nextElement();
-                headers.append(header).append(": ").append(request.getHeader(header)).append(" | ");
-            }
-        }
-
-        return headers.toString();
+    private HttpServletRequest getCurrentHttpRequest() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        return attributes != null ? attributes.getRequest() : null;
     }
+
+    @Bean
+    Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+
 }

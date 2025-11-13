@@ -1,5 +1,6 @@
 package com.example.userservice.dto.entry;
 
+import com.example.userservice.entity.Role;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.FetchType;
 import jakarta.validation.constraints.NotBlank;
@@ -33,6 +34,6 @@ public class UserEntryDto {
         @NotBlank(message = "Debe especificarse la contraseña del usuario")
         private String password;
         private Long authId;
-        private String role;
+        Role role;
 
     }

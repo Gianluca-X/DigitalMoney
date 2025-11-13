@@ -1,5 +1,6 @@
 package com.example.authservice.dto;
 
+import com.example.authservice.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,11 +12,15 @@ public class UserEntry {
     private String password;
 
     private String email;
-
-    public UserEntry(String password, String phone, String email, String firstName, String lastName, String dni) {
-        this.password = password;
-        this.email = email;
+    Role rol;
+    public Role getRol() {
+        return rol;
     }
+
+    public void setRol(Role rol) {
+        this.rol = rol;
+    }
+
 
     public String getPassword() {
         return password;

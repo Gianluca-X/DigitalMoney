@@ -9,5 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthResponse {
     private Long authId;
+    private String message;
     private String token; // Opcional, si quieres devolver token al frontend
 }

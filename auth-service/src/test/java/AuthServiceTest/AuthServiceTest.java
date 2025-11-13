@@ -63,7 +63,7 @@ class AuthServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
         // Mock del JWT
-        when(jwtUtil.generateToken(entry.getEmail())).thenReturn("mocked-token");
+        when(jwtUtil.generateToken(entry)).thenReturn("mocked-token");
 
         // Act
 
@@ -91,13 +91,13 @@ class AuthServiceTest {
 
         when(userRepository.findByEmail("user@mail.com")).thenReturn(Optional.of(userFromDb));
         when(passwordEncoder.matches("123456", "hashed")).thenReturn(true);
-        when(jwtUtil.generateToken("user@mail.com")).thenReturn("token123");
+        when(jwtUtil.generateToken(userFromDb)).thenReturn("token123");
 
         LoginRequest loginUser = new LoginRequest();
         loginUser.setEmail("user@mail.com");
         loginUser.setPassword("123456");
 
-        String token = authService.login(loginUser);
+        AuthResponse authResponse = authService.login(loginUser);
         assertEquals("token123", token);
     }
 

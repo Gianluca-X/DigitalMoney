@@ -22,6 +22,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     //Optional<User>findByName(String userName);
     boolean existsByEmail(String email); // Verificar si un email ya existe
     //boolean existsByUserName(String userName); // Verificar si un nombre de usuario ya existe
+    boolean existsByDni(String dni);
     @Modifying
     @Transactional
     @Query("UPDATE User u SET u.alias = :alias WHERE u.id = :id")

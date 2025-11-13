@@ -3,6 +3,15 @@ package com.example.authservice.dto;
 public class AuthResponse {
     private String token;
     private Long authId;
+    private String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
     public String getToken() {
         return token;

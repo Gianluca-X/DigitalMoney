@@ -3,6 +3,7 @@
     import java.util.UUID;
 
     import com.example.authservice.dto.*;
+    import com.example.authservice.entity.Role;
     import com.example.authservice.entity.User;
     import com.example.authservice.exceptions.EmailNotVerifiedException;
     import com.example.authservice.exceptions.InvalidPasswordException;
@@ -38,6 +39,10 @@
             User user = new User();
             user.setEmail(userEntry.getEmail());
             user.setPassword(passwordEncoder.encode(userEntry.getPassword()));
+            user.setRol(
+                    userEntry.getRol() == null ? Role.USER : userEntry.getRol()
+            );
+
             userRepository.save(user);
             String verificationCode = UUID.randomUUID().toString();
             user.setVerificationCode(verificationCode);
@@ -50,13 +55,13 @@
             // Publicar el evento de registro de usuario
 
             // Generar el token JWT
-            String token = jwtUtil.generateToken(user.getEmail());
+            String token = jwtUtil.generateToken(user);
             AuthResponse authResponse = new AuthResponse();
             authResponse.setAuthId(user.getId());
             authResponse.setToken(token);
             return authResponse;
         }
-        public String login(LoginRequest request) {
+        public AuthResponse login(LoginRequest request) {
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new UserNotFoundException("Usuario inexistente"));
 
@@ -68,7 +73,13 @@
                 throw new EmailNotVerifiedException("Email no verificado"); // Opcional, 400 o 403 según política
             }
 
-           return jwtUtil.generateToken(user.getEmail());
+           String token = jwtUtil.generateToken(user);
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setAuthId(user.getId());
+            authResponse.setToken(token);
+            authResponse.setMessage("Login Exitoso");
+            return authResponse;
+
         }
 
         // Cambio de email
@@ -128,7 +139,34 @@
 
             log.info("✅ Email verified for user: {}", user.getEmail());
         }
+        public AuthResponse updateUser(UserUpdateRequest request) {
+        log.info("Accediendo a update user." + request.getId());
+            User user = userRepository.findById(request.getId())
+                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+            log.info(user.getId() + "id user");
+            if (request.getEmail() != null)
+                user.setEmail(request.getEmail());
 
+            if (request.getRole() != null)
+                user.setRol(request.getRole());
 
+            userRepository.save(user);
+
+            String token = jwtUtil.generateToken(user);
+        AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(token);
+            authResponse.setMessage("Usuario actualizado con exito");
+            authResponse.setAuthId(user.getId());
+            return authResponse;
+        }
+
+        public String deleteUser(Long id) {
+
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+            userRepository.delete(user);
+            return "Usuario de auth eliminado con éxito";
+        }
 
     }

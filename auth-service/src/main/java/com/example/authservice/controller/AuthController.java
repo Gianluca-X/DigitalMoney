@@ -2,6 +2,7 @@ package com.example.authservice.controller;
 
 import com.example.authservice.dto.AuthResponse;
 import com.example.authservice.dto.LoginRequest;
+import com.example.authservice.dto.UserUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.example.authservice.dto.UserEntry;
@@ -28,15 +29,22 @@ public class AuthController {
         return ResponseEntity.ok(authResponse);
     }
 
-    // Login de un usuario
-    @Operation(summary = "Login de usuario", description = "login de usuario")
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest user) {
-        String token = authService.login(user);
-        return ResponseEntity.ok(token + "  <<Login Exitoso>>");
-    }
+        // Login de un usuario
+        @Operation(summary = "Login de usuario", description = "login de usuario")
+        @PostMapping("/login")
+        public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest user) {
+            AuthResponse authResponse = authService.login(user);
+            return ResponseEntity.ok(authResponse);
+        }
 
     // Cambio de email
+    @Operation(summary = "actualizar usuario desde userservice", description = "actualiza correo o role")
+    @PutMapping("/update")
+    public ResponseEntity<AuthResponse> updateUser(
+            @RequestBody UserUpdateRequest userEntry){
+       AuthResponse authResponse = authService.updateUser(userEntry);
+        return ResponseEntity.ok(authResponse);
+    }
     @Operation(summary = "cambiar email",description = "cambia el correo")
     @PatchMapping("/change-email")
     public ResponseEntity<String> changeEmail(
@@ -63,6 +71,11 @@ public class AuthController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @DeleteMapping("/delete/{authId}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long authId) {
+        authService.deleteUser(authId);
+        return ResponseEntity.ok("Usuario eliminado con éxito");
     }
 
 

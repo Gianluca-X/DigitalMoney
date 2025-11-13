@@ -58,15 +58,18 @@ class UserServiceImplTest {
 
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
 
-        AuthResponse mockAuthResponse = new AuthResponse(1L, "fake-jwt-token");
+        AuthResponse mockAuthResponse = new AuthResponse();
+        mockAuthResponse.setAuthId(1L);
+        mockAuthResponse.setToken("fake-jwt-token");
         when(authClient.registerUser(any())).thenReturn(mockAuthResponse);
 
         User savedUser = new User();
         savedUser.setId(1L);
         savedUser.setFirstName("Sebastian");
         savedUser.setEmail(request.getEmail());
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(123L);

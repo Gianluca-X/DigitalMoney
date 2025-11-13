@@ -1,10 +1,10 @@
 package com.example.authservice.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "users")
 @Data
@@ -26,7 +26,8 @@ public class User {
 
     @Column(name = "verification_code")
     private String verificationCode;
-
+    @Enumerated(EnumType.STRING)
+    Role rol;
     public String getEmail() {
         return email;
     }
