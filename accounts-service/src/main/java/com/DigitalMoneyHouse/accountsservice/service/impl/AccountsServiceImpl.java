@@ -54,6 +54,11 @@ public class AccountsServiceImpl implements IAccountService {
         // Obtener los últimos 5 movimientos
         return transactionRepository.findTop5ByAccountIdOrderByDateDesc(accountId);
     }
+    public Account getAccountEntityById(Long id) throws ResourceNotFoundException {
+        return accountsRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + id));
+    }
+
 
     public AccountOutDTO getAccountById(Long accountId) throws ResourceNotFoundException {
         // Obtener la cuenta de la base de datos
@@ -111,6 +116,13 @@ public class AccountsServiceImpl implements IAccountService {
 
         return response;
     }
+    public void deleteAccount(Long id) throws ResourceNotFoundException {
+        if (!accountsRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Cuenta no encontrada");
+        }
+        accountsRepository.deleteById(id);
+    }
+
     private void configureMapping() {
         modelMapper.typeMap(AccountOutDTO.class, Account.class);
         modelMapper.typeMap(Account.class, AccountOutDTO.class);

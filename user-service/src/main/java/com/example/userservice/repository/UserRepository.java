@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User>findByEmail(String email);
 
     @Override
     Optional<User> findById(Long id);
@@ -27,6 +26,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Query("UPDATE User u SET u.alias = :alias WHERE u.id = :id")
     int updateAlias(@Param("id") Long id, @Param("alias") String alias);
+
+    Optional<User> findByEmail(String email);
 }
 
 

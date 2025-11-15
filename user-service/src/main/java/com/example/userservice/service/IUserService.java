@@ -21,4 +21,6 @@ public interface IUserService {
     Map<String, Object> handleUserRegistration(UserEntryDto userEntryDto) throws IOException;
 
     UserRegisterOutDto handleRegister(UserRegisterRequest request) throws DniAlreadyExistsException;
+
+    User findByEmail(String email);
 }

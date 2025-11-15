@@ -16,8 +16,8 @@ public interface AccountClient {
             @RequestBody AccountCreationRequest request
     );
 
-    @DeleteMapping("/accounts/delete")
-    AccountResponse deleteAccount(@RequestParam Long accountId);
+    @DeleteMapping("/accounts/{accountId}")
+    AccountResponse deleteAccount(@PathVariable Long accountId);
 
 }
 

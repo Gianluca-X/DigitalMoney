@@ -3,8 +3,10 @@ package com.DigitalMoneyHouse.accountsservice.controller;
 import com.DigitalMoneyHouse.accountsservice.dto.*;
 import com.DigitalMoneyHouse.accountsservice.dto.entry.AccountEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.AccountOutDTO;
+import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Transaction;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
+import com.DigitalMoneyHouse.accountsservice.exceptions.UnauthorizedException;
 import com.DigitalMoneyHouse.accountsservice.repository.AccountsRepository;
 import com.DigitalMoneyHouse.accountsservice.service.impl.AccountsServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,7 +65,7 @@ public class AccountsController {
             LOGGER.info("✅ Solicitud interna autorizada con token interno.");
             AccountResponse response = accountsService.createAccount(request);
             return ResponseEntity.ok(response);
-            
+
         }
 
         if (jwt != null) {
@@ -132,4 +137,43 @@ public class AccountsController {
                     .body(Map.of("error", "Error al actualizar el alias en el servicio de usuarios."));
         }
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAccount(
+            @PathVariable Long id,
+            Authentication authentication
+    ) throws ResourceNotFoundException {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UnauthorizedException("No se encontró información de autenticación");
+        }
+
+        String email = authentication.getName();
+        String role = authentication.getAuthorities()
+                .stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse("ROLE_USER");
+
+        log.info("🔐 DELETE Account: usuario={} rol={}", email, role);
+
+        // ADMIN puede borrar cualquiera
+        if (role.equals("ROLE_ADMIN")) {
+            accountsService.deleteAccount(id);
+            return ResponseEntity.noContent().build();
+        }
+
+        // USER solo puede borrar su propia cuenta
+        Account account = accountsService.getAccountEntityById(id);
+
+        if (!account.getEmail().equals(email)) {
+            throw new UnauthorizedException("No tenés permisos para borrar esta cuenta");
+        }
+
+        accountsService.deleteAccount(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
+
+
 }

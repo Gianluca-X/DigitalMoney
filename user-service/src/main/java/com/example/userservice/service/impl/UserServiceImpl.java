@@ -114,26 +114,30 @@ public class UserServiceImpl implements IUserService {
     }
 
     // ✅ DELETE USER — dueño o admin (validación la hace controller)
+    @Transactional
     @Override
     public void deleteUser(Long userId, String email) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        if (!user.getEmail().equals(email)) {
-            throw new UnauthorizedException("No puedes borrar otro usuario");
-        }
-
         try {
+            log.info("emtrando al account");
             if (user.getAccountId() != null) {
                 accountClient.deleteAccount(user.getAccountId());
             }
+
+            log.info("dentro de auth");
             if (user.getAuthId() != null){
-            authClient.deleteUserAuth(user.getAuthId());
+                String response = authClient.deleteUserAuth(user.getAuthId());
+                log.info("Respuesta del auth-service al eliminar auth: {}", response);
             }
-            userRepository.delete(user);
-        } catch (DataIntegrityViolationException e) {
-            throw new RuntimeException("No se puede eliminar: dependencias activas");
+
+            log.info("🔥 Eliminando usuario LOCAL en UserService...");
+            userRepository.delete(user);   // ← AHORA SÍ SE EJECUTA
+
+        } catch (Exception e) {
+            log.error("❌ Error eliminando usuario: {}", e.getMessage());
+            throw new RuntimeException("Error al eliminar usuario");
         }
     }
 
@@ -143,9 +147,6 @@ public class UserServiceImpl implements IUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        if (!user.getEmail().equals(email)) {
-            throw new UnauthorizedException("No puedes modificar otro usuario");
-        }
 
         if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
         if (dto.getLastName() != null) user.setLastName(dto.getLastName());
@@ -197,9 +198,6 @@ public class UserServiceImpl implements IUserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        if (!user.getEmail().equals(email)) {
-            throw new UnauthorizedException("No puedes modificar el alias de otro usuario");
-        }
 
         if (alias == null || alias.trim().isEmpty()) {
             throw new BadRequestException("Alias vacío");
@@ -221,5 +219,13 @@ public class UserServiceImpl implements IUserService {
         } while (userRepository.existsByAlias(alias));
 
         return alias;
+    }
+
+    @Override
+    public User findByEmail(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+        return user;
     }
 }

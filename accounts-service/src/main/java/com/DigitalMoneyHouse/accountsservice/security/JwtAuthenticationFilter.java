@@ -12,12 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -29,7 +31,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private AccountsServiceImpl accountsServiceImpl;
 
-    // ✅ Evitar que este filtro corra en /accounts/create
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return request.getRequestURI().startsWith("/accounts/create");
@@ -41,87 +42,85 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        log.info("➡️ Request entrante: " + requestURI);
+        log.info("➡️ Request entrante: {}", requestURI);
 
-        // ✅ Si ya hay autenticación (ej: InternalTokenFilter), no procesar más
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            log.info("⚡ Ya existe autenticación en el contexto, salto JwtAuthenticationFilter.");
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Extraer token de la cabecera
         String token = extractToken(request);
         if (token == null) {
-            log.error("❌ Token no presente en la cabecera Authorization");
+            log.error("❌ Token no presente");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token no presente");
             return;
         }
 
-        // Validar token
-        if (!validateToken(token)) {
-            log.error("❌ Token inválido");
+        Claims claims;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(secretKey)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            log.error("❌ Error validando token: {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
             return;
         }
 
-        // Extraer email del token
-        String email = extractEmailFromToken(token);
+        String email = claims.getSubject();
         if (email == null) {
-            log.error("❌ No se pudo extraer el email del token");
+            log.error("❌ Token sin subject (email)");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
             return;
         }
+        List<String> rolesFromToken = null;
 
-        // Verificar que el usuario exista en la base
+// 1) Si viene como lista ["ADMIN"]
+        if (claims.get("roles") != null) {
+            rolesFromToken = claims.get("roles", List.class);
+        }
+
+// 2) Si viene como string único "ADMIN"
+        if (rolesFromToken == null && claims.get("role") != null) {
+            String singleRole = claims.get("role", String.class);
+            rolesFromToken = List.of(singleRole);
+        }
+
+// 3) Fallback
+        if (rolesFromToken == null) {
+            log.warn("⚠️ Token sin roles. Se asignará ROLE_USER por defecto");
+            rolesFromToken = List.of("USER");
+        }
+
+        // Convertir a autoridades de Spring Security
+        List<SimpleGrantedAuthority> authorities =
+                rolesFromToken.stream()
+                        .map(role -> {
+                            log.info("➡️ Rol detectado en token: {}", role);
+                            return new SimpleGrantedAuthority("ROLE_" + role.toUpperCase());
+                        })
+                        .collect(Collectors.toList());
+
+        // Buscar cuenta
         Account account = accountsServiceImpl.findByEmail(email);
-        if (account != null && email.equals(account.getEmail())) {
-            log.info("✅ Autenticación exitosa para: " + email);
 
-            // Setear autenticación en el contexto de Spring
-            SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(account, null, new ArrayList<>())
-            );
-        } else {
-            log.error("❌ Autenticación fallida: email no coincide o cuenta no encontrada.");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Autenticación fallida");
+        if (account == null) {
+            log.error("❌ Cuenta no encontrada para {}", email);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Cuenta no encontrada");
             return;
         }
 
-        // Continuar con la cadena de filtros
+        log.info("✅ Autenticación exitosa para: {} con roles: {}", email, authorities);
+
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(account, null, authorities);
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         chain.doFilter(request, response);
     }
 
     private String extractToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // quitar "Bearer "
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
         }
         return null;
-    }
-
-    private boolean validateToken(String token) {
-        try {
-            Jwts.parser()
-                    .setSigningKey(secretKey)
-                    .parseClaimsJws(token); // si falla lanza excepción
-            return true;
-        } catch (Exception e) {
-            log.error("Error al validar token: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private String extractEmailFromToken(String token) {
-        try {
-            Claims claims = Jwts.parser()
-                    .setSigningKey(secretKey)
-                    .parseClaimsJws(token)
-                    .getBody();
-            return claims.getSubject(); // el "sub" es el email
-        } catch (Exception e) {
-            log.error("Error al extraer email del token: " + e.getMessage());
-            return null;
-        }
     }
 }

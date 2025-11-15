@@ -14,7 +14,7 @@ public interface AuthClient {
     @PutMapping("/auth/update")
     AuthResponse updateUserAuth(@RequestBody UserUpdateRequest request);
     @DeleteMapping("/auth/delete/{authId}")
-    AuthResponse deleteUserAuth(@PathVariable Long authId);
+    String deleteUserAuth(@PathVariable Long authId);
 
 
 

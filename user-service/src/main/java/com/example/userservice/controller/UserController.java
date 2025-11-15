@@ -38,7 +38,7 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o ausente");
         }
 
-        checkOwnerOrAdmin(email, auth, id);
+        checkOwnerOrAdmin(auth, id);
         return ResponseEntity.ok(userService.getUserById(id, email));
     }
 
@@ -49,7 +49,7 @@ public class UserController {
             @AuthenticationPrincipal String email,
             Authentication auth) {
 
-        checkOwnerOrAdmin(email, auth, userId);
+        checkOwnerOrAdmin(auth, userId);
         userService.updateUser(userId, dto, email);
         return ResponseEntity.ok("Usuario actualizado");
     }
@@ -61,7 +61,7 @@ public class UserController {
             @AuthenticationPrincipal String email,
             Authentication auth) {
 
-        checkOwnerOrAdmin(email, auth, id);
+        checkOwnerOrAdmin(auth, id);
         userService.updateAlias(id, request.getAlias(), email);
         return ResponseEntity.ok("Alias actualizado");
     }
@@ -72,23 +72,29 @@ public class UserController {
             @AuthenticationPrincipal String email,
             Authentication auth) {
 
-        checkOwnerOrAdmin(email, auth, userId);
+        checkOwnerOrAdmin(auth, userId);
         userService.deleteUser(userId, email);
         return ResponseEntity.ok("Usuario eliminado");
     }
 
-    private void checkOwnerOrAdmin(String email, Authentication auth, Long targetUserId) {
+    public void checkOwnerOrAdmin(Authentication auth, Long targetUserId) {
 
-        if (email == null)
-            throw new UnauthorizedException("Token inválido");
-        String role = auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
-        log.info(role + "role");
-        if ("ADMIN".equalsIgnoreCase(role)) return;
+        String email = auth.getPrincipal().toString();
+        User user = userService.findByEmail(email);
 
-        User user = userService.getUserById(targetUserId, email);
+        if (user == null) {
+            throw new UnauthorizedException("Usuario no encontrado.");
+        }
 
-        if (!user.getEmail().equals(email)) {
-            throw new UnauthorizedException("No tienes permisos para esta acción");
+        boolean isAdmin = auth.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        boolean isOwner = user.getId().equals(targetUserId);
+
+        if (!isAdmin && !isOwner) {
+            throw new UnauthorizedException("No tienes permisos para acceder a este recurso.");
         }
     }
+
 }
