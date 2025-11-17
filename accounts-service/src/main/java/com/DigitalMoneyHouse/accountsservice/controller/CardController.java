@@ -83,7 +83,7 @@ public class CardController {
             CardOutDTO newCard = cardServiceImpl.createCard(accountId, createCardEntryDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(newCard);
         } catch (CardAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (IllegalArgumentException e) {

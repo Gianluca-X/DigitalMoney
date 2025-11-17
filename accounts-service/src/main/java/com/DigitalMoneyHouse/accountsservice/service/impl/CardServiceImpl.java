@@ -60,7 +60,7 @@ public class CardServiceImpl implements ICardService {
     }
 
     public CardOutDTO createCard(Long accountId, CreateCardEntryDTO createCardEntryDTO)
-            throws CardAlreadyExistsException, ResourceNotFoundException, BadRequestException {
+            throws CardAlreadyExistsException, ResourceNotFoundException, BadRequestException, UnauthorizedException {
 
         String email = extractEmailFromSecurityContext();
         if (email == null) {
@@ -79,11 +79,12 @@ public class CardServiceImpl implements ICardService {
         if (createCardEntryDTO.getNumber() == null || createCardEntryDTO.getNumber().isBlank()) {
             throw new BadRequestException("El número de la tarjeta no puede estar vacío");
         }
-
         Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());
-        if (existingCard.isPresent() && !existingCard.get().getAccountId().equals(accountId)) {
-            throw new CardAlreadyExistsException("La tarjeta ya está asociada a otra cuenta.");
+
+        if (existingCard.isPresent()) {
+            throw new CardAlreadyExistsException("La tarjeta ya existe en el sistema.");
         }
+
 
         Card card = new Card();
         card.setAccountId(accountId);

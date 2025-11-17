@@ -24,7 +24,7 @@ public class Account {
     private Long id;
 
     private Long userId;
-
+    @Column(unique = true)
     private String email;
 
     private String alias;

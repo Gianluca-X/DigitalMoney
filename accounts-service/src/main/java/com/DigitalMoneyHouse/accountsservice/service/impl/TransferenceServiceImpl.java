@@ -6,6 +6,7 @@ import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Activity;
 import com.DigitalMoneyHouse.accountsservice.entities.Card;
 import com.DigitalMoneyHouse.accountsservice.entities.Transference;
+import com.DigitalMoneyHouse.accountsservice.exceptions.BadRequestException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.InsufficientFundsException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.UnauthorizedException;
@@ -14,6 +15,7 @@ import com.DigitalMoneyHouse.accountsservice.repository.ActivityRepository;
 import com.DigitalMoneyHouse.accountsservice.repository.CardRepository;
 import com.DigitalMoneyHouse.accountsservice.repository.TransferenceRepository;
 import com.DigitalMoneyHouse.accountsservice.service.ITransferenceService;
+import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,101 +45,88 @@ public class TransferenceServiceImpl implements ITransferenceService {
         this.cardRepository = cardRepository;
         this.activityRepository = activityRepository;
     }
+    public void registerTransferenceFromCards(Long accountId, TransferenceOutDTO transferenceOutDto)
+            throws ResourceNotFoundException, UnauthorizedException {
 
-    public void registerTransferenceFromCards(Long accountId, TransferenceOutDTO transferenceOutDto) throws ResourceNotFoundException, UnauthorizedException {
-
-        // Validar que la cuenta existe
         Account account = accountsRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
-        // Validar que la tarjeta existe
         Card card = cardRepository.findById(transferenceOutDto.getCardId())
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
 
-        // Crear la transferencia
+        // Validar que la tarjeta pertenece a la cuenta
+        if (!card.getAccountId().equals(account.getId())) {
+            throw new UnauthorizedException("No puedes usar una tarjeta que no corresponde a tu cuenta.");
+        }
+
         Transference transference = new Transference();
         transference.setAccountId(account.getId());
         transference.setCardId(card.getId());
         transference.setAmount(transferenceOutDto.getAmount());
         transference.setDate(LocalDateTime.now());
-        transference.setType("deposit"); // Para depósitos
+        transference.setType("deposit");
         transference.setRecipient(account.getCvu());
 
-        // Guardar la transferencia
         transferenceRepository.save(transference);
 
-        // Actualizar el balance de la cuenta usando BigDecimal
-        BigDecimal currentBalance = account.getBalance();
-        BigDecimal amount = transferenceOutDto.getAmount();
-
-        // Sumamos el monto al balance actual
-        BigDecimal newBalance = currentBalance.add(amount);
-
-        // Actualizamos el balance en la cuenta
-        account.setBalance(newBalance);
-
-        // Guardar la cuenta con el nuevo balance
+        account.setBalance(account.getBalance().add(transferenceOutDto.getAmount()));
         accountsRepository.save(account);
 
-        // Registrar la actividad
         Activity activity = new Activity();
         activity.setAccountId(accountId);
-        activity.setType("deposit"); // Tipo de actividad
-        activity.setAmount(amount); // Monto de la transferencia
-        activity.setDescription("Depósito de " + amount + " realizado con la tarjeta " + card.getNumber()); // Descripción
-        activity.setDate(LocalDateTime.now()); // Fecha de la actividad
+        activity.setType("deposit");
+        activity.setAmount(transferenceOutDto.getAmount());
+        activity.setDescription("Depósito de " + transferenceOutDto.getAmount() + " usando tarjeta " + card.getNumber());
+        activity.setDate(LocalDateTime.now());
 
         activityRepository.save(activity);
     }
 
+
     @Transactional
-    public void makeTransferFromCash(Long accountId, TransferRequestOutDTO transferRequest) throws AccountNotFoundException {
-        // Validar la existencia de la cuenta que envía el dinero
+    public void makeTransferFromCash(Long accountId, TransferRequestOutDTO transferRequest)
+            throws AccountNotFoundException, BadRequestException {
+
         Account senderAccount = accountsRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Cuenta inexistente"));
 
-        // Validar fondos
         if (senderAccount.getBalance().compareTo(transferRequest.getAmount()) < 0) {
             throw new InsufficientFundsException("Fondos insuficientes");
         }
 
-        // Buscar la cuenta del destinatario por alias o CVU
         Account recipientAccount = findRecipientAccount(transferRequest.getRecipient());
 
-        // Actualizar balances
-        senderAccount.setBalance(senderAccount.getBalance().subtract(transferRequest.getAmount())); // Resta del saldo del remitente
-        recipientAccount.setBalance(recipientAccount.getBalance().add(transferRequest.getAmount())); // Suma al saldo del destinatario
+        if (recipientAccount.getId().equals(senderAccount.getId())) {
+            throw new BadRequestException("No puedes transferirte dinero a tu propia cuenta.");
+        }
 
-        // Guardar los cambios en ambas cuentas
+        senderAccount.setBalance(senderAccount.getBalance().subtract(transferRequest.getAmount()));
+        recipientAccount.setBalance(recipientAccount.getBalance().add(transferRequest.getAmount()));
+
         accountsRepository.save(senderAccount);
         accountsRepository.save(recipientAccount);
 
-        // Aquí puedes guardar la transferencia en la base de datos
         Transference transfer = new Transference();
-        transfer.setAccountId(accountId); // Cuenta que envía
+        transfer.setAccountId(accountId);
         transfer.setAmount(transferRequest.getAmount());
-        transfer.setType("transfer-out"); // Para transferencias enviadas
+        transfer.setType("transfer-out");
         transfer.setRecipient(transferRequest.getRecipient());
         transferenceRepository.save(transfer);
 
-        // Registrar la actividad para la cuenta que envía
         Activity senderActivity = new Activity();
         senderActivity.setAccountId(accountId);
-        senderActivity.setType("transfer-out"); // Tipo de actividad
-        senderActivity.setAmount(transferRequest.getAmount().negate()); // Monto de la transferencia (negado)
-        senderActivity.setDescription(transferRequest.getRecipient()); // Descripción
+        senderActivity.setType("transfer-out");
+        senderActivity.setAmount(transferRequest.getAmount().negate());
+        senderActivity.setDescription(transferRequest.getRecipient());
         senderActivity.setDate(LocalDateTime.now());
-
         activityRepository.save(senderActivity);
 
-        // Registrar la actividad para la cuenta que recibe
         Activity recipientActivity = new Activity();
         recipientActivity.setAccountId(recipientAccount.getId());
-        recipientActivity.setType("transfer-in"); // Tipo de actividad
-        recipientActivity.setAmount(transferRequest.getAmount()); // Monto de la transferencia
-        recipientActivity.setDescription(senderAccount.getCvu()); // Descripción
-        recipientActivity.setDate(LocalDateTime.now()); // Fecha de la actividad
-
+        recipientActivity.setType("transfer-in");
+        recipientActivity.setAmount(transferRequest.getAmount());
+        recipientActivity.setDescription(senderAccount.getCvu());
+        recipientActivity.setDate(LocalDateTime.now());
         activityRepository.save(recipientActivity);
     }
 

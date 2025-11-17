@@ -35,7 +35,7 @@ public class AccountsServiceImpl implements IAccountService {
         this.modelMapper = modelMapper;
         this.accountsRepository=accountsRepository;
         this.transactionRepository= transactionRepository;
-        configureMapping();
+        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
     }
 
     public AccountResponse getAccountSummary(Long accountId) throws ResourceNotFoundException {
@@ -121,11 +121,6 @@ public class AccountsServiceImpl implements IAccountService {
             throw new ResourceNotFoundException("Cuenta no encontrada");
         }
         accountsRepository.deleteById(id);
-    }
-
-    private void configureMapping() {
-        modelMapper.typeMap(AccountOutDTO.class, Account.class);
-        modelMapper.typeMap(Account.class, AccountOutDTO.class);
     }
 
 }
