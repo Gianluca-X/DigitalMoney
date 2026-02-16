@@ -11,7 +11,6 @@
     import com.example.authservice.exceptions.UserNotFoundException;
     import com.example.authservice.repository.UserRepository;
     import com.example.authservice.security.JwtUtil;
-    import com.mysql.cj.log.Log;
     import lombok.RequiredArgsConstructor;
     import lombok.extern.slf4j.Slf4j;
     import org.springframework.amqp.rabbit.core.RabbitTemplate;

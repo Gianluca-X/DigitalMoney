@@ -1,25 +1,26 @@
 spring:
   application:
     name: accounts-service
+
   datasource:
-    url: jdbc:mysql://localhost:3306/account_service_db
-    username: account_service_user
-    password: nerea
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     open-in-view: false
     show-sql: true
     hibernate:
       ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
         format_sql: true
+
   config:
-    import: "optional:configserver:"  # <--- Corrección aquí
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8080/realms/digitalmoneyhouse
+    import: "optional:configserver:"
+
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
@@ -43,11 +44,12 @@ logging:
     org.springframework: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
 jwt:
-  secret: mySuperUltraSecretKeyForJWTGeneration123456!
+  secret: ${JWT_SECRET}
+
 internal:
-  token: super-secret-internal-token-123
+  token: ${INTERNAL_TOKEN}
+
 management:
   endpoints:
     web:
