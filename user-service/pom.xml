@@ -85,10 +85,6 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-config</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-		</dependency>
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -172,10 +168,7 @@
 			<version>2.1.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.amqp</groupId>
-			<artifactId>spring-rabbit</artifactId>
-		</dependency>
+
 		<dependency>
 			<groupId>com.example</groupId>
 			<artifactId>auth-service</artifactId>

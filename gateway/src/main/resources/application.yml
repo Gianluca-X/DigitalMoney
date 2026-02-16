@@ -1,21 +1,16 @@
+server:
+  port: 8085
+
 spring:
   application:
     name: gateway-service
 
-  config:
-    import: "optional:configserver:"
   cloud:
-    config:
-      uri: http://localhost:8888/
-      discovery:
-        serviceId: config-server
-      enabled: false
-
     gateway:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "http://localhost:3000"
+            allowedOrigins: ${FRONTEND_URL}
             allowedMethods:
               - GET
               - POST
@@ -23,25 +18,22 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
-            allowedHeaders:
-              - Origin
-              - X-Requested-With
-              - Content-Type
-              - Accept
-              - Authorization
+            allowedHeaders: "*"
             allowCredentials: true
-            maxAge: 3600
+
       routes:
         - id: auth-service
-          uri: lb://auth-service
+          uri: ${AUTH_SERVICE_URL}
           predicates:
             - Path=/auth/**
+
         - id: user-service
-          uri: lb://user-service
+          uri: ${USER_SERVICE_URL}
           predicates:
             - Path=/users/**
+
         - id: accounts-service
-          uri: lb://accounts-service
+          uri: ${ACCOUNTS_SERVICE_URL}
           predicates:
             - Path=/accounts/**
 
@@ -49,32 +41,10 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          secret: mySuperSecretKey123   # 👈 debe coincidir con jwt.secret en AuthService
+          secret: ${JWT_SECRET}
 
 management:
   endpoints:
     web:
       exposure:
         include: health, info
-  info:
-    env:
-      enabled: true
-
-info:
-  app:
-    name: Gateway
-    description: API gateway
-    version: 1.0.0
-
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    preferIpAddress: true
-
-server:
-  port: 8085
-
-main:
-  allow-bean-definition-overriding: true

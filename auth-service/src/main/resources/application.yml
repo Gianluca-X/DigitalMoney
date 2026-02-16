@@ -34,14 +34,7 @@ spring:
             required: true
           timeout: 5000
         debug: true
-eureka:
-  instance:
-    hostname: auth-service
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    statusPageUrlPath: /actuator/info
-    healthCheckUrlPath: /actuator/health
+
 
 jwt:
   secret: ${JWT_SECRET}
@@ -52,9 +45,3 @@ logging:
     org.springframework: INFO
     com.zaxxer.hikari: DEBUG
 
-rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
