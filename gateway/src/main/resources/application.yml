@@ -6,7 +6,8 @@ spring:
     name: gateway-service
   
   config:
-    import: optional:configserver
+    import: 
+      enabled: false
   cloud:
     gateway:
       globalcors:
