@@ -4,7 +4,6 @@ import com.example.authservice.dto.*;
 import com.example.authservice.entity.User;
 import com.example.authservice.repository.UserRepository;
 import com.example.authservice.security.JwtUtil;
-import com.mysql.cj.log.Log;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
