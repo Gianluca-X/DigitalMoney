@@ -26,7 +26,8 @@ spring:
       matching-strategy: ANT_PATH_MATCHER
 
 server:
-  port: 8084
+  port: ${PORT:8084}
+
 
 
 logging:

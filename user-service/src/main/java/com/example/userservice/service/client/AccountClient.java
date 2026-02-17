@@ -8,7 +8,10 @@ import com.example.userservice.dto.entry.UserUpdateRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "accounts-service", configuration = FeignClientConfig.class)
+@FeignClient(
+    name = "accounts-service",
+    url = "${ACCOUNT_SERVICE_URL}",
+    configuration = FeignClientConfig.class)
 public interface AccountClient {
 
     @PostMapping("/accounts/create")
