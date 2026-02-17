@@ -4,7 +4,9 @@ server:
 spring:
   application:
     name: gateway-service
-
+  
+  config:
+    import: optional:configserver
   cloud:
     gateway:
       globalcors:
