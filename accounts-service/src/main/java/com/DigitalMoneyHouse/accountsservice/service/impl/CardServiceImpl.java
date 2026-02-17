@@ -135,10 +135,12 @@ public class CardServiceImpl implements ICardService {
             throw new UnauthorizedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
         }
 
-        Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());
-        if (existingCard.isPresent() && !existingCard.get().getAccountId().equals(accountId)) {
-            throw new CardAlreadyExistsException("La tarjeta ya está asociada a otra cuenta.");
-        }
+     Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());
+
+    if (existingCard.isPresent()) {
+       throw new CardAlreadyExistsException("La tarjeta ya está asociada a otra cuenta.");
+    }
+
 
         Card card = new Card();
         card.setAccountId(accountId);

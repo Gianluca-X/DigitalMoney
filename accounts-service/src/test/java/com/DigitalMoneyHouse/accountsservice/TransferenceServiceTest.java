@@ -64,9 +64,12 @@ public class TransferenceServiceTest {
         card = new Card();
         card.setId(1L);
         card.setNumber("1111222233334444");
+        card.setAccountId(1L); // ← ESTA LÍNEA FALTABA
 
         transferenceOutDto = new TransferenceOutDTO();
         transferenceOutDto.setCardId(1L);
+        transferenceOutDto.setAmount(new BigDecimal("500.00")); // ← ESTA TAMBIÉN FALTABA
+
 
 
         //test para transferencia en Efectivo

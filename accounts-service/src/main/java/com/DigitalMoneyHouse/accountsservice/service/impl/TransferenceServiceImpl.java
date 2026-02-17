@@ -55,8 +55,9 @@ public class TransferenceServiceImpl implements ITransferenceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
 
         // Validar que la tarjeta pertenece a la cuenta
-        if (!card.getAccountId().equals(account.getId())) {
-            throw new UnauthorizedException("No puedes usar una tarjeta que no corresponde a tu cuenta.");
+        if (!account.getId().equals(card.getAccountId())) {
+
+           throw new UnauthorizedException("No puedes usar una tarjeta que no corresponde a tu cuenta.");
         }
 
         Transference transference = new Transference();

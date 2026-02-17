@@ -5,6 +5,7 @@ import com.DigitalMoneyHouse.accountsservice.dto.entry.ActivityFilterEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.ActivityOutDTO;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Activity;
+import com.DigitalMoneyHouse.accountsservice.exceptions.BadRequestException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
 import com.DigitalMoneyHouse.accountsservice.repository.AccountsRepository;
 import com.DigitalMoneyHouse.accountsservice.repository.ActivityRepository;
@@ -199,7 +200,7 @@ public class ActivityServiceTest {
         assertTrue(pdfContent.contains("Descripción: Pago de factura"));
     }
     @Test
-    void deberiaDeDevolverLasActividadesFiltradas() {
+    void deberiaDeDevolverLasActividadesFiltradas() throws BadRequestException {
         // Arrange
         ActivityFilterEntryDTO filter = ActivityFilterEntryDTO.builder()
                 .minAmount(new BigDecimal("50"))

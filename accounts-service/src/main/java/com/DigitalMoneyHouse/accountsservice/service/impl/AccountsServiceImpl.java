@@ -35,7 +35,6 @@ public class AccountsServiceImpl implements IAccountService {
         this.modelMapper = modelMapper;
         this.accountsRepository=accountsRepository;
         this.transactionRepository= transactionRepository;
-        this.modelMapper.getConfiguration().setSkipNullEnabled(true);
     }
 
     public AccountResponse getAccountSummary(Long accountId) throws ResourceNotFoundException {
