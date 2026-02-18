@@ -1,5 +1,5 @@
 server:
-  port: 8085
+  port: ${PORT:8085}
 
 spring:
   application:
@@ -36,7 +36,7 @@ spring:
             - Path=/users/**
 
         - id: accounts-service
-          uri: ${ACCOUNTS_SERVICE_URL}
+          uri: ${ACCOUNT_SERVICE_URL}
           predicates:
             - Path=/accounts/**
 
