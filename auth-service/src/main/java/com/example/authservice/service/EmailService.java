@@ -3,10 +3,9 @@ package com.example.authservice.service;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.SendGrid;
-
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Email;
-import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Personalization;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,13 +19,27 @@ public class EmailService {
     @Value("${sendgrid.from}")
     private String fromEmail;
 
-    public void sendEmail(String to, String subject, String body) {
+    // 🔥 TU TEMPLATE ID
+    private static final String TEMPLATE_ID = "d-78171ba20bcc43c2bbba792c25e95d52";
+
+    public void sendVerificationEmail(String to, String verificationCode, String verificationLink) {
         try {
+
             Email from = new Email(fromEmail);
             Email recipient = new Email(to);
-            Content content = new Content("text/plain", body);
 
-            Mail mail = new Mail(from, subject, recipient, content);
+            Mail mail = new Mail();
+            mail.setFrom(from);
+            mail.setTemplateId(TEMPLATE_ID);
+
+            Personalization personalization = new Personalization();
+            personalization.addTo(recipient);
+
+            // 🔥 VARIABLES QUE USA EL TEMPLATE
+            personalization.addDynamicTemplateData("verification_code", verificationCode);
+            personalization.addDynamicTemplateData("verification_link", verificationLink);
+
+            mail.addPersonalization(personalization);
 
             SendGrid sg = new SendGrid(apiKey);
             Request request = new Request();
@@ -38,14 +51,7 @@ public class EmailService {
             sg.api(request);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error sending email", e);
+            throw new RuntimeException("Error sending verification email", e);
         }
-    }
-
-    public void sendVerificationEmail(String email, String verificationCode, String verificationLink) {
-        String body = "Your verification code is: " + verificationCode +
-                "\nClick to verify your email: " + verificationLink;
-
-        sendEmail(email, "Verify your email for Digital Money House", body);
     }
 }

@@ -1,7 +1,7 @@
     package com.example.authservice.service;
     import java.util.Optional;
     import java.util.UUID;
-
+    import org.springframework.beans.factory.annotation.Value;
     import com.example.authservice.dto.*;
     import com.example.authservice.entity.Role;
     import com.example.authservice.entity.User;
@@ -30,6 +30,8 @@
         private final PasswordEncoder passwordEncoder;
         private final RabbitTemplate rabbitTemplate; // Para enviar eventos a RabbitMQ
         private final UserEventPublisher userEventPublisher; // Inyectar el publicador de eventos
+        @Value("${gateway.url}")
+        private String gatewayUrl;
 
         // Registro de un usuario
         public AuthResponse register(UserEntry userEntry) {
@@ -49,7 +51,7 @@
             userRepository.save(user);
 
             // Enviar el email
-            String verificationLink = "http://localhost:8085/auth/verify?code=" + verificationCode;
+            String verificationLink = gatewayUrl + "/auth/verify?code=" + verificationCode;
             emailService.sendVerificationEmail(user.getEmail(), verificationCode, verificationLink);
             // Publicar el evento de registro de usuario
 

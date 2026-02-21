@@ -24,7 +24,8 @@ sendgrid:
   api-key: ${SENDGRID_API_KEY}
   from: ${SENDGRID_FROM}
 
-
+gateway:
+  url: ${GATEWAY_URL}
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000 # 1 día en milisegundos
