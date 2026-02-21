@@ -40,7 +40,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         // Registrar es público
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
 
