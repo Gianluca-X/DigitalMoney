@@ -35,3 +35,11 @@ logging:
     org.springframework: INFO
     com.zaxxer.hikari: DEBUG
 
+management:
+ endpoints:
+  web:
+   exposure:
+    include: health,info,metrics,env,loggers
+ endpoint:
+  health:
+   show-details: always
