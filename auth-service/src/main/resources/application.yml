@@ -34,6 +34,11 @@ logging:
     org.hibernate.type.descriptor.sql: TRACE
     org.springframework: INFO
     com.zaxxer.hikari: DEBUG
+rabbitmq:
+ addresses: ${RABBITMQ_URL:amqps://guest:guest@localhost:5672/}
+ username: ${RABBITMQ_USER:guest}
+ password: ${RABBITMQ_PASS:guest}
+ virtual-host: ${RABBITMQ_VHOST:/}
 
 management:
  endpoints:
