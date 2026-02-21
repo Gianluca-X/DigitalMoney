@@ -19,6 +19,13 @@ spring:
 
   config:
     import: "optional:configserver:"
+  rabbitmq:
+   addresses: ${RABBITMQ_URL}
+   username: ${RABBITMQ_USER}
+   password: ${RABBITMQ_PASS}
+   virtual-host: ${RABBITMQ_VHOST}
+   ssl:
+    enabled: true
 
 sendgrid:
   api-key: ${SENDGRID_API_KEY}
@@ -34,13 +41,7 @@ logging:
     org.hibernate.type.descriptor.sql: TRACE
     org.springframework: INFO
     com.zaxxer.hikari: DEBUG
-rabbitmq:
- addresses: ${RABBITMQ_URL}
- username: ${RABBITMQ_USER}
- password: ${RABBITMQ_PASS}
- virtual-host: ${RABBITMQ_VHOST}
- ssl:
-  enabled: true
+
 management:
  endpoints:
   web:
