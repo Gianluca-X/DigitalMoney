@@ -1,5 +1,13 @@
 package com.example.authservice.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data // Esto genera Getters, Setters, toString y Equals
+@AllArgsConstructor // Genera constructor con todos los campos
+@NoArgsConstructor  
+
 public class AuthResponse {
     private String token;
     private Long authId;
