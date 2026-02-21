@@ -2,22 +2,22 @@ name: Warmup Services
 
 on:
   schedule:
-      - cron: '*/10 * * * *'  # cada 10 minutos
-        workflow_dispatch:       # permite ejecutarlo manualmente
+    - cron: '*/10 * * * *'   # cada 10 minutos
+  workflow_dispatch:
 
-        jobs:
-          ping-services:
-              runs-on: ubuntu-latest
+jobs:
+  ping-services:
+    runs-on: ubuntu-latest
 
-                  steps:
-                        - name: Ping ACCOUNT SERVICE
-                                run: curl -s ${{ secrets.ACCOUNT_SERVICE_URL }}/actuator/health
+    steps:
+      - name: Ping ACCOUNT SERVICE
+        run: curl -f ${{ secrets.ACCOUNT_SERVICE_URL }}/actuator/health
 
-                                      - name: Ping AUTH SERVICE
-                                              run: curl -s ${{ secrets.AUTH_SERVICE_URL }}/actuator/health
+      - name: Ping AUTH SERVICE
+        run: curl -f ${{ secrets.AUTH_SERVICE_URL }}/actuator/health
 
-                                                    - name: Ping USER SERVICE
-                                                            run: curl -s ${{ secrets.USER_SERVICE_URL }}/actuator/health
+      - name: Ping USER SERVICE
+        run: curl -f ${{ secrets.USER_SERVICE_URL }}/actuator/health
 
-                                                                  - name: Ping GATEWAY
-                                                                          run: curl -s ${{ secrets.GATEWAY_URL }}/actuator/health
+      - name: Ping GATEWAY
+        run: curl -f ${{ secrets.GATEWAY_URL }}/actuator/health
