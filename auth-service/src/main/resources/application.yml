@@ -20,20 +20,9 @@ spring:
   config:
     import: "optional:configserver:"
 
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USER}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          timeout: 5000
-        debug: true
+sendgrid:
+  api-key: ${SENDGRID_API_KEY}
+  from: ${SENDGRID_FROM}
 
 
 jwt:
