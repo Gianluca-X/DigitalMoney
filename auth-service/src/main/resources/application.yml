@@ -39,7 +39,8 @@ rabbitmq:
  username: ${RABBITMQ_USER}
  password: ${RABBITMQ_PASS}
  virtual-host: ${RABBITMQ_VHOST}
-
+ ssl:
+  enabled: true
 management:
  endpoints:
   web:
