@@ -3,11 +3,9 @@ package com.example.authservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Setter
-@Getter
 @Entity
 @Table(name = "users")
-@Data
+@Data // Esto ya incluye @Getter, @Setter, @RequiredArgsConstructor, @ToString y @EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
@@ -21,51 +19,14 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
     @Column(name = "email_verified")
     private boolean emailVerified = false;
 
     @Column(name = "verification_code")
     private String verificationCode;
+
     @Enumerated(EnumType.STRING)
-    Role rol;
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public boolean isEmailVerified() {
-        return emailVerified;
-    }
-
-    public void setEmailVerified(boolean emailVerified) {
-        this.emailVerified = emailVerified;
-    }
-
-    public String getVerificationCode() {
-        return verificationCode;
-    }
-
-    public void setVerificationCode(String verificationCode) {
-        this.verificationCode = verificationCode;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Column(name = "rol")
+    private Role rol; // IMPORTANTE: Ponelo como private
 }
