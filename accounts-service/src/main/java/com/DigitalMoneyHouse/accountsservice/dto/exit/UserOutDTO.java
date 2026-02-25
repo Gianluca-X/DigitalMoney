@@ -9,7 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class UserOutDTO {
     private Long id;
-    private String email;
+    private Long userId;
     private String alias;
     private String cvu;
     private String username;

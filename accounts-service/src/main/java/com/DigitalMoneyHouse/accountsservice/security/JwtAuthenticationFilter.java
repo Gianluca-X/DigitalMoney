@@ -1,5 +1,5 @@
 package com.DigitalMoneyHouse.accountsservice.security;
-
+import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.service.impl.AccountsServiceImpl;
 import io.jsonwebtoken.Claims;
@@ -66,9 +66,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String email = claims.getSubject();
-        if (email == null) {
-            log.error("❌ Token sin subject (email)");
+        Long userId = claims.get("userId", Long.class);
+        if (userId == null) {
+            log.error("❌ Token sin subject (userId)");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
             return;
         }
@@ -101,15 +101,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
 
         // Buscar cuenta
-        Account account = accountsServiceImpl.findByEmail(email);
-
-        if (account == null) {
-            log.error("❌ Cuenta no encontrada para {}", email);
+        Account account;
+        try {
+            account = accountsServiceImpl.findByUserId(userId);
+        } catch (ResourceNotFoundException e) {
+            log.error("❌ Cuenta no encontrada para userId {}: {}", userId, e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Cuenta no encontrada");
             return;
         }
 
-        log.info("✅ Autenticación exitosa para: {} con roles: {}", email, authorities);
+        log.info("✅ Autenticación exitosa para: {} con roles: {}", userId, authorities);
 
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(account, null, authorities);

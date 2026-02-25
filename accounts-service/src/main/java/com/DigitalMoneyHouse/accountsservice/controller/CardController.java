@@ -2,114 +2,97 @@ package com.DigitalMoneyHouse.accountsservice.controller;
 
 import com.DigitalMoneyHouse.accountsservice.dto.entry.CreateCardEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.CardOutDTO;
+import com.DigitalMoneyHouse.accountsservice.exceptions.BadRequestException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.CardAlreadyExistsException;
-import com.DigitalMoneyHouse.accountsservice.exceptions.CardNotFoundException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
-import com.DigitalMoneyHouse.accountsservice.service.impl.CardServiceImpl;
+import com.DigitalMoneyHouse.accountsservice.exceptions.UnauthorizedException;
+import com.DigitalMoneyHouse.accountsservice.service.ICardService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
 @RequestMapping("/accounts/{accountId}/cards")
 public class CardController {
 
-    @Autowired
-    private CardServiceImpl cardServiceImpl;
+    private final ICardService cardService;
+
+    public CardController(ICardService cardService) {
+        this.cardService = cardService;
+    }
+
     @Operation(summary = "Obtener todas las tarjetas")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Tarjetas obtenidas con exito",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CardOutDTO.class))}),
-            @ApiResponse(responseCode = "400", description = "Bad Request",
-                    content = @Content),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content)
+            @ApiResponse(responseCode = "200", description = "Tarjetas obtenidas con éxito"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"),
+            @ApiResponse(responseCode = "500", description = "Error interno")
     })
     @GetMapping
-    public ResponseEntity<List<CardOutDTO>> getAllCards(@PathVariable Long accountId) {
-        List<CardOutDTO> cards = cardServiceImpl.getCardsByAccountId(accountId);
-        if (cards.isEmpty()) {
-            return ResponseEntity.ok().body(cards);
-        }
-        return ResponseEntity.ok(cards);
+    public ResponseEntity<List<CardOutDTO>> getAllCards(
+            @PathVariable Long accountId)
+            throws UnauthorizedException {
+
+        return ResponseEntity.ok(
+                cardService.getCardsByAccountId(accountId)
+        );
     }
-    @Operation(summary = "Obtener tarjeta")
+
+    @Operation(summary = "Obtener tarjeta por ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Tarjeta obtenida con exito",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CardOutDTO.class))}),
-            @ApiResponse(responseCode = "400", description = "Bad Request",
-                    content = @Content),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content)
+            @ApiResponse(responseCode = "200", description = "Tarjeta obtenida con éxito"),
+            @ApiResponse(responseCode = "404", description = "Tarjeta no encontrada"),
+            @ApiResponse(responseCode = "403", description = "No autorizado")
     })
     @GetMapping("/{cardId}")
-    public ResponseEntity<CardOutDTO> getCard(@PathVariable Long accountId, @PathVariable Long cardId) throws ResourceNotFoundException {
-        CardOutDTO card = cardServiceImpl.getCardById(accountId, cardId);
-        return ResponseEntity.ok(card);
+    public ResponseEntity<CardOutDTO> getCard(
+            @PathVariable Long accountId,
+            @PathVariable Long cardId)
+            throws ResourceNotFoundException, UnauthorizedException {
+
+        return ResponseEntity.ok(
+                cardService.getCardById(accountId, cardId)
+        );
     }
-    @Operation(summary = "Crear tarjeta de credito/debito")
+
+    @Operation(summary = "Crear tarjeta")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Tarjeta creada con exito",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CardOutDTO.class))}),
-            @ApiResponse(responseCode = "400", description = "Bad Request",
-                    content = @Content),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content)
+            @ApiResponse(responseCode = "201", description = "Tarjeta creada con éxito"),
+            @ApiResponse(responseCode = "409", description = "Tarjeta ya existe"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "403", description = "No autorizado")
     })
     @PostMapping
-    public ResponseEntity<?> createCard(@PathVariable Long accountId, @Valid @RequestBody CreateCardEntryDTO createCardEntryDTO, HttpServletRequest request) {
-        try {
-            // Extraer el token del header
-            String token = request.getHeader("Authorization");
-            if (token == null || !token.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-            }
+    public ResponseEntity<CardOutDTO> createCard(
+            @PathVariable Long accountId,
+            @Valid @RequestBody CreateCardEntryDTO dto)
+            throws CardAlreadyExistsException,
+                   ResourceNotFoundException,
+                   BadRequestException,
+                   UnauthorizedException {
 
-            String jwtToken = token.replace("Bearer ", "");
-            CardOutDTO newCard = cardServiceImpl.createCard(accountId, createCardEntryDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(newCard);
-        } catch (CardAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } catch (Exception e) {
-            e.printStackTrace(); // Para depuración
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        CardOutDTO created = cardService.createCard(accountId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Operation(summary = "Eliminar tarjeta")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "tarjeta eliminada con exito"),
-            @ApiResponse(responseCode = "400", description = "Bad Request",
-                    content = @Content),
-            @ApiResponse(responseCode = "500", description = "Server error",
-                    content = @Content)
+            @ApiResponse(responseCode = "204", description = "Tarjeta eliminada"),
+            @ApiResponse(responseCode = "404", description = "Tarjeta no encontrada"),
+            @ApiResponse(responseCode = "403", description = "No autorizado")
     })
-    @DeleteMapping("{cardId}")
-    public ResponseEntity<?> deleteCard(@PathVariable Long accountId, @PathVariable Long cardId) {
-        try {
-            cardServiceImpl.deleteCard(accountId, cardId);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Tarjeta eliminada exitosamente"));
-        } catch (CardNotFoundException e) {
-            return ResponseEntity.notFound().build(); // 404 Not Found
-        }
+    @DeleteMapping("/{cardId}")
+    public ResponseEntity<Void> deleteCard(
+            @PathVariable Long accountId,
+            @PathVariable Long cardId)
+            throws ResourceNotFoundException, UnauthorizedException {
+
+        cardService.deleteCard(accountId, cardId);
+        return ResponseEntity.noContent().build();
     }
 }
-

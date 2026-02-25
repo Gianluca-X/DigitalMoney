@@ -4,12 +4,15 @@ import com.DigitalMoneyHouse.accountsservice.dto.entry.CreateCardEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.CardOutDTO;
 import com.DigitalMoneyHouse.accountsservice.exceptions.CardAlreadyExistsException;
 import com.DigitalMoneyHouse.accountsservice.exceptions.ResourceNotFoundException;
-
+import com.DigitalMoneyHouse.accountsservice.exceptions.BadRequestException;
+import com.DigitalMoneyHouse.accountsservice.exceptions.UnauthorizedException;
 import java.util.List;
 
 public interface ICardService {
      List<CardOutDTO> getCardsByAccountId(Long accountId);
      CardOutDTO getCardById(Long accountId, Long cardId) throws ResourceNotFoundException;
-     CardOutDTO createCard(Long accountId, CreateCardEntryDTO createCardEntryDTO, String jwtToken) throws CardAlreadyExistsException, ResourceNotFoundException;
-     void deleteCard(Long accountId, Long cardId);
+     CardOutDTO createCard(Long accountId, CreateCardEntryDTO createCardEntryDTO)
+          throws CardAlreadyExistsException, ResourceNotFoundException,
+                    BadRequestException, UnauthorizedException;     
+     void deleteCard(Long accountId, Long cardId) throws ResourceNotFoundException, UnauthorizedException;
 }

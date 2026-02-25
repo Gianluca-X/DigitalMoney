@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class AccountCreationRequest {
     private Long userId;
-    private String email;
     private String alias;
     private String cvu;
     private BigDecimal initialBalance;

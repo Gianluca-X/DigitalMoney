@@ -1,5 +1,5 @@
 package com.DigitalMoneyHouse.accountsservice.repository;
-
+import java.util.Optional;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface AccountsRepository extends JpaRepository<Account, Long> {
-   Account findByEmail(String email);
+    Optional<Account> findByUserId(Long userId);
     Account findByAlias(String recipientIdentifier);
     Account findByCvu(String recipientIdentifier);
     @Modifying

@@ -5,158 +5,125 @@ import com.DigitalMoneyHouse.accountsservice.dto.exit.CardOutDTO;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
 import com.DigitalMoneyHouse.accountsservice.entities.Card;
 import com.DigitalMoneyHouse.accountsservice.exceptions.*;
-import com.DigitalMoneyHouse.accountsservice.repository.AccountsRepository;
 import com.DigitalMoneyHouse.accountsservice.repository.CardRepository;
 import com.DigitalMoneyHouse.accountsservice.service.ICardService;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class CardServiceImpl implements ICardService {
-    private final Logger LOGGER = LoggerFactory.getLogger(CardServiceImpl.class);
 
-    @Autowired
-    private CardRepository cardRepository;
+    private final CardRepository cardRepository;
+    private final ModelMapper modelMapper;
 
-    @Autowired
-    private AccountsRepository accountsRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    public List<CardOutDTO> getCardsByAccountId(Long accountId) {
-        List<Card> cards = cardRepository.findByAccountId(accountId);
-        return cards.stream()
-                .map(card -> modelMapper.map(card, CardOutDTO.class))
-                .collect(Collectors.toList());
+    public CardServiceImpl(CardRepository cardRepository,
+                           ModelMapper modelMapper) {
+        this.cardRepository = cardRepository;
+        this.modelMapper = modelMapper;
     }
 
-    public CardOutDTO getCardById(Long accountId, Long cardId) throws ResourceNotFoundException {
+    private Account getAuthenticatedAccount() {
+        return (Account) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+    }
+
+    private void validateOwnership(Long accountId) throws UnauthorizedException {
+        Account authenticatedAccount = getAuthenticatedAccount();
+
+        if (!authenticatedAccount.getId().equals(accountId)) {
+            throw new UnauthorizedException(
+                    "No tienes permiso para operar sobre esta cuenta."
+            );
+        }
+    }
+
+    @Override
+    public List<CardOutDTO> getCardsByAccountId(Long accountId) {
+        validateOwnership(accountId);
+
+        return cardRepository.findByAccountId(accountId)
+                .stream()
+                .map(card -> modelMapper.map(card, CardOutDTO.class))
+                .toList();
+    }
+
+    @Override
+    public CardOutDTO getCardById(Long accountId, Long cardId)
+            throws ResourceNotFoundException {
+
+        validateOwnership(accountId);
+
         Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new ResourceNotFoundException("Card not found with id: " + cardId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Tarjeta no encontrada")
+                );
 
         if (!card.getAccountId().equals(accountId)) {
-            throw new AccessDeniedException("You do not have access to this card.");
+            throw new UnauthorizedException(
+                    "La tarjeta no pertenece a esta cuenta."
+            );
         }
 
         return modelMapper.map(card, CardOutDTO.class);
     }
 
     @Override
-    public CardOutDTO createCard(Long accountId, CreateCardEntryDTO createCardEntryDTO, String jwtToken) throws CardAlreadyExistsException, ResourceNotFoundException {
-        return null;
-    }
+    public CardOutDTO createCard(Long accountId,
+                                 CreateCardEntryDTO dto)
+            throws CardAlreadyExistsException,
+                   BadRequestException,
+                   UnauthorizedException {
 
-    public CardOutDTO createCard(Long accountId, CreateCardEntryDTO createCardEntryDTO)
-            throws CardAlreadyExistsException, ResourceNotFoundException, BadRequestException, UnauthorizedException {
+        validateOwnership(accountId);
 
-        String email = extractEmailFromSecurityContext();
-        if (email == null) {
-            throw new ResourceNotFoundException("No se pudo obtener el email del contexto de seguridad.");
-        }
-        LOGGER.info("Usuario autenticado: {}", email);
-
-        Account account = accountsRepository.findByEmail(email);
-        if (account == null) {
-            throw new ResourceNotFoundException("No se encontró ninguna cuenta asociada al email.");
+        if (dto.getNumber() == null || dto.getNumber().isBlank()) {
+            throw new BadRequestException(
+                    "El número de la tarjeta no puede estar vacío"
+            );
         }
 
-        if (!account.getId().equals(accountId)) {
-            throw new UnauthorizedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
+        if (cardRepository.findByNumber(dto.getNumber()).isPresent()) {
+            throw new CardAlreadyExistsException(
+                    "La tarjeta ya existe en el sistema."
+            );
         }
-        if (createCardEntryDTO.getNumber() == null || createCardEntryDTO.getNumber().isBlank()) {
-            throw new BadRequestException("El número de la tarjeta no puede estar vacío");
-        }
-        Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());
-
-        if (existingCard.isPresent()) {
-            throw new CardAlreadyExistsException("La tarjeta ya existe en el sistema.");
-        }
-
 
         Card card = new Card();
         card.setAccountId(accountId);
-        card.setNumber(createCardEntryDTO.getNumber());
-        card.setName(createCardEntryDTO.getName());
-        card.setExpiry(createCardEntryDTO.getExpiry());
-        card.setCvc(createCardEntryDTO.getCvc());
+        card.setNumber(dto.getNumber());
+        card.setName(dto.getName());
+        card.setExpiry(dto.getExpiry());
+        card.setCvc(dto.getCvc());
 
-        Card savedCard = cardRepository.save(card);
-        return modelMapper.map(savedCard, CardOutDTO.class);
+        Card saved = cardRepository.save(card);
+
+        return modelMapper.map(saved, CardOutDTO.class);
     }
 
-    public void deleteCard(Long accountId, Long cardId) {
-        Optional<Card> cardOptional = cardRepository.findById(cardId);
-        if (cardOptional.isEmpty() || !cardOptional.get().getAccountId().equals(accountId)) {
-            throw new CardNotFoundException("La tarjeta no se encontró o no está asociada a esta cuenta.");
-        }
-        cardRepository.delete(cardOptional.get());
-    }
+    @Override
+    public void deleteCard(Long accountId, Long cardId)
+        throws ResourceNotFoundException, UnauthorizedException {
 
-    private String extractEmailFromSecurityContext() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            Object principal = authentication.getPrincipal();
-            if (principal instanceof Account account) {
-                return account.getEmail();
-            } else if (principal instanceof String username) {
-                return username;
-            }
-        }
-        return null;
-    }
+        validateOwnership(accountId);
 
-    // Método alternativo solo para pruebas unitarias (sin usar SecurityContextHolder)
-    public CardOutDTO createCardWithEmail(Long accountId, CreateCardEntryDTO createCardEntryDTO, String email)
-            throws CardAlreadyExistsException, ResourceNotFoundException {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Tarjeta no encontrada")
+                );
 
-        if (email == null) {
-            throw new ResourceNotFoundException("No se pudo obtener el email del token.");
+        if (!card.getAccountId().equals(accountId)) {
+            throw new UnauthorizedException(
+                    "La tarjeta no pertenece a esta cuenta."
+            );
         }
 
-        Account account = accountsRepository.findByEmail(email);
-        if (account == null) {
-            throw new ResourceNotFoundException("No se encontró ninguna cuenta asociada al email.");
-        }
-
-        if (!account.getId().equals(accountId)) {
-            throw new UnauthorizedException("No tienes permiso para agregar una tarjeta a esta cuenta.");
-        }
-
-     Optional<Card> existingCard = cardRepository.findByNumber(createCardEntryDTO.getNumber());
-
-    if (existingCard.isPresent()) {
-       throw new CardAlreadyExistsException("La tarjeta ya está asociada a otra cuenta.");
+        cardRepository.delete(card);
     }
-
-
-        Card card = new Card();
-        card.setAccountId(accountId);
-        card.setNumber(createCardEntryDTO.getNumber());
-        card.setName(createCardEntryDTO.getName());
-        card.setExpiry(createCardEntryDTO.getExpiry());
-        card.setCvc(createCardEntryDTO.getCvc());
-
-        Card savedCard = cardRepository.save(card);
-        return modelMapper.map(savedCard, CardOutDTO.class);
-    }
-    public CardServiceImpl(CardRepository cardRepository, AccountsRepository accountsRepository, ModelMapper modelMapper) {
-        this.cardRepository = cardRepository;
-        this.accountsRepository = accountsRepository;
-        this.modelMapper = modelMapper;
-    }
-
-
 }

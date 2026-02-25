@@ -21,27 +21,27 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import java.util.stream.Collectors;
-@Slf4j
 @Service
+@Slf4j
+@Transactional
 public class AccountsServiceImpl implements IAccountService {
+
     private final ModelMapper modelMapper;
-    @Autowired
-    private AccountsRepository accountsRepository;
+    private final AccountsRepository accountsRepository;
+    private final TransactionRepository transactionRepository;
 
-    @Autowired
-    private TransactionRepository transactionRepository;
-
-    public AccountsServiceImpl(ModelMapper modelMapper, AccountsRepository accountsRepository, TransactionRepository transactionRepository) {
+    public AccountsServiceImpl(ModelMapper modelMapper,
+                               AccountsRepository accountsRepository,
+                               TransactionRepository transactionRepository) {
         this.modelMapper = modelMapper;
-        this.accountsRepository=accountsRepository;
-        this.transactionRepository= transactionRepository;
+        this.accountsRepository = accountsRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     public AccountResponse getAccountSummary(Long accountId) throws ResourceNotFoundException {
         // Obtener la cuenta por ID
-        Account account = accountsRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
-
+    Account account = accountsRepository.findById(accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
         // Crear respuesta con saldo disponible
         AccountResponse response = new AccountResponse();
         response.setId(account.getId());
@@ -85,8 +85,11 @@ public class AccountsServiceImpl implements IAccountService {
         return accountOutDTO; // Retornar el DTO
     }
 
-    public  Account findByEmail(String email) {
-        return accountsRepository.findByEmail(email);
+    public Account findByUserId(Long userId) throws ResourceNotFoundException {
+        return accountsRepository.findByUserId(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Cuenta no encontrada para userId: " + userId)
+                );
     }
 
     public List<AccountOutDTO> getAccounts() {
@@ -99,7 +102,6 @@ public class AccountsServiceImpl implements IAccountService {
     public AccountResponse createAccount(AccountCreationRequest request) {
         Account account = new Account();
         account.setUserId(request.getUserId());
-        account.setEmail(request.getEmail());
         account.setAlias(request.getAlias());
         account.setCvu(request.getCvu());
         account.setBalance(request.getInitialBalance());
@@ -111,7 +113,7 @@ public class AccountsServiceImpl implements IAccountService {
     AccountResponse response = new AccountResponse();
         response.setId(account.getId());
         response.setBalance(account.getBalance());
-    log.info("✅ Cuenta creada con id={} email={} alias={}", account.getId(), account.getEmail(), account.getAlias());
+    log.info("✅ Cuenta creada con id={} userId={} alias={}", account.getId(), account.getUserId(), account.getAlias());
 
         return response;
     }

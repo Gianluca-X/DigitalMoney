@@ -1,5 +1,7 @@
 package com.DigitalMoneyHouse.accountsservice;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.DigitalMoneyHouse.accountsservice.dto.entry.CreateCardEntryDTO;
 import com.DigitalMoneyHouse.accountsservice.dto.exit.CardOutDTO;
 import com.DigitalMoneyHouse.accountsservice.entities.Account;
@@ -15,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-
+import org.junit.jupiter.api.AfterEach;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,18 +31,19 @@ class CardServiceTest {
 
     private CardServiceImpl cardServiceImpl;
 
-    @Mock private AccountsRepository accountsRepository;
     @Mock private ModelMapper modelMapper;
-@Mock private  CardRepository cardRepository;
+    @Mock private  CardRepository cardRepository;
     private CreateCardEntryDTO createCardEntryDTO;
     private Account mockAccount;
     private Card mockCard;
     private CardOutDTO mockCardOutDTO;
-
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
     @BeforeEach
     void setUp() {
-        cardServiceImpl = new CardServiceImpl(cardRepository, accountsRepository, modelMapper);
-
+        cardServiceImpl = new CardServiceImpl(cardRepository, modelMapper);
         createCardEntryDTO = CreateCardEntryDTO.builder()
                 .accountId(1L)
                 .number("1234567890123456")
@@ -51,8 +54,7 @@ class CardServiceTest {
 
         mockAccount = new Account();
         mockAccount.setId(1L);
-        mockAccount.setEmail("test@example.com");
-
+        mockAccount.setUserId(1L);
         mockCard = new Card();
         mockCard.setId(1L);
         mockCard.setAccountId(1L);
@@ -73,54 +75,76 @@ class CardServiceTest {
 
     @Test
     void testCreateCard_Success() throws Exception {
-        String email = "test@example.com";
 
-        when(accountsRepository.findByEmail(email)).thenReturn(mockAccount);
-        when(cardRepository.findByNumber(createCardEntryDTO.getNumber())).thenReturn(Optional.empty());
+        // Mock principal autenticado
+        Account authenticatedAccount = new Account();
+        authenticatedAccount.setId(1L);
+        authenticatedAccount.setUserId(1L);
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(authenticatedAccount);
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        when(cardRepository.findByNumber(createCardEntryDTO.getNumber()))
+                .thenReturn(Optional.empty());
+
         when(cardRepository.save(any(Card.class))).thenReturn(mockCard);
-        when(modelMapper.map(mockCard, CardOutDTO.class)).thenReturn(mockCardOutDTO);
 
-        CardOutDTO result = cardServiceImpl.createCardWithEmail(1L, createCardEntryDTO, email);
+        when(modelMapper.map(mockCard, CardOutDTO.class))
+                .thenReturn(mockCardOutDTO);
+
+        CardOutDTO result = cardServiceImpl.createCard(1L, createCardEntryDTO);
 
         assertNotNull(result);
         assertEquals(mockCardOutDTO.getId(), result.getId());
-        assertEquals(mockCardOutDTO.getNumber(), result.getNumber());
 
-        verify(accountsRepository).findByEmail(email);
-        verify(cardRepository).findByNumber(createCardEntryDTO.getNumber());
         verify(cardRepository).save(any(Card.class));
     }
 
-    @Test
-    void testCreateCard_EmailNotFound() {
-        String email = null;
-
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            cardServiceImpl.createCardWithEmail(1L, createCardEntryDTO, email);
-        });
-
-        assertEquals("No se pudo obtener el email del token.", exception.getMessage());
-    }
-
-    @Test
+    
+   @Test
     void testCreateCard_CardAlreadyExists() {
-        String email = "test@example.com";
 
-        when(accountsRepository.findByEmail(email)).thenReturn(mockAccount);
-        when(cardRepository.findByNumber(createCardEntryDTO.getNumber())).thenReturn(Optional.of(mockCard));
+        Account authenticatedAccount = new Account();
+        authenticatedAccount.setId(1L);
+        authenticatedAccount.setUserId(1L);
 
-        CardAlreadyExistsException exception = assertThrows(CardAlreadyExistsException.class, () -> {
-            cardServiceImpl.createCardWithEmail(1L, createCardEntryDTO, email);
-        });
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(authenticatedAccount);
 
-        assertEquals("La tarjeta ya está asociada a otra cuenta.", exception.getMessage());
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        when(cardRepository.findByNumber(createCardEntryDTO.getNumber()))
+                .thenReturn(Optional.of(mockCard));
+
+        assertThrows(CardAlreadyExistsException.class, () ->
+                cardServiceImpl.createCard(1L, createCardEntryDTO)
+        );
     }
 
     @Test
     void testGetCardById_Success() throws ResourceNotFoundException {
+        Account authenticatedAccount = new Account();
+authenticatedAccount.setId(1L);
+authenticatedAccount.setUserId(1L);
+
+Authentication authentication = mock(Authentication.class);
+when(authentication.getPrincipal()).thenReturn(authenticatedAccount);
+
+SecurityContext securityContext = mock(SecurityContext.class);
+when(securityContext.getAuthentication()).thenReturn(authentication);
+
+SecurityContextHolder.setContext(securityContext);
         Card card = new Card();
         card.setId(1L);
-        card.setAccountId(2L);
+        card.setAccountId(1L);
         card.setNumber("1234-5678-9012-3456");
         card.setName("John Doe");
         card.setExpiry("12/24");
@@ -131,14 +155,25 @@ class CardServiceTest {
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
         when(modelMapper.map(card, CardOutDTO.class)).thenReturn(cardOutDTO);
 
-        CardOutDTO result = cardServiceImpl.getCardById(2L, 1L);
+        CardOutDTO result = cardServiceImpl.getCardById(1L, 1L);
 
         assertNotNull(result);
         assertEquals(cardOutDTO.getId(), result.getId());
     }
 
     @Test
-    void testDeleteCard_Success() {
+    void testDeleteCard_Success() throws ResourceNotFoundException {
+        Account authenticatedAccount = new Account();
+authenticatedAccount.setId(1L);
+authenticatedAccount.setUserId(1L);
+
+Authentication authentication = mock(Authentication.class);
+when(authentication.getPrincipal()).thenReturn(authenticatedAccount);
+
+SecurityContext securityContext = mock(SecurityContext.class);
+when(securityContext.getAuthentication()).thenReturn(authentication);
+
+SecurityContextHolder.setContext(securityContext);
         Long accountId = 1L;
         Long cardId = 1L;
         Card card = new Card();
@@ -155,6 +190,17 @@ class CardServiceTest {
 
     @Test
     void testGetCardsByAccountId_Success() {
+        Account authenticatedAccount = new Account();
+authenticatedAccount.setId(1L);
+authenticatedAccount.setUserId(1L);
+
+Authentication authentication = mock(Authentication.class);
+when(authentication.getPrincipal()).thenReturn(authenticatedAccount);
+
+SecurityContext securityContext = mock(SecurityContext.class);
+when(securityContext.getAuthentication()).thenReturn(authentication);
+
+SecurityContextHolder.setContext(securityContext);
         Long accountId = 1L;
         Card card1 = new Card(1L, "1111", "Visa", "12/24", accountId, "123");
         Card card2 = new Card(2L, "2222", "Master", "01/25", accountId, "456");

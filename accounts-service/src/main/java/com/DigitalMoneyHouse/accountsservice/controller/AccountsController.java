@@ -57,27 +57,24 @@ public class AccountsController {
     @PostMapping("/create")
     public ResponseEntity<AccountResponse> createAccount(
             @RequestBody AccountCreationRequest request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @AuthenticationPrincipal Jwt jwt) {
+            Authentication authentication,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
-
+        // 🔐 Llamada interna
         if (authHeader != null && authHeader.equals("Bearer " + internalToken)) {
             LOGGER.info("✅ Solicitud interna autorizada con token interno.");
-            AccountResponse response = accountsService.createAccount(request);
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(accountsService.createAccount(request));
         }
 
-        if (jwt != null) {
-            String email = jwt.getClaim("email");
-            LOGGER.info("📥 Creando cuenta para usuario autenticado: {}", email);
-            AccountResponse response = accountsService.createAccount(request);
-            return ResponseEntity.ok(response);
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        LOGGER.warn("Intento de creación de cuenta sin autenticación válida.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
+        Account account = (Account) authentication.getPrincipal();
+        LOGGER.info("📥 Creando cuenta para userId={}", account.getUserId());
+
+        return ResponseEntity.ok(accountsService.createAccount(request));
+}
 
     // 📌 Obtener balance de cuenta
     @GetMapping("/{id}/balance")
@@ -137,7 +134,7 @@ public class AccountsController {
                     .body(Map.of("error", "Error al actualizar el alias en el servicio de usuarios."));
         }
     }
-    @DeleteMapping("/{id}")
+   @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccount(
             @PathVariable Long id,
             Authentication authentication
@@ -147,14 +144,16 @@ public class AccountsController {
             throw new UnauthorizedException("No se encontró información de autenticación");
         }
 
-        String email = authentication.getName();
+        Account authenticatedAccount = (Account) authentication.getPrincipal();
+        Long userId = authenticatedAccount.getUserId();
+
         String role = authentication.getAuthorities()
                 .stream()
                 .findFirst()
                 .map(GrantedAuthority::getAuthority)
                 .orElse("ROLE_USER");
 
-        log.info("🔐 DELETE Account: usuario={} rol={}", email, role);
+        log.info("🔐 DELETE Account: userId={} rol={}", userId, role);
 
         // ADMIN puede borrar cualquiera
         if (role.equals("ROLE_ADMIN")) {
@@ -163,9 +162,9 @@ public class AccountsController {
         }
 
         // USER solo puede borrar su propia cuenta
-        Account account = accountsService.getAccountEntityById(id);
+        Account accountToDelete = accountsService.getAccountEntityById(id);
 
-        if (!account.getEmail().equals(email)) {
+        if (!accountToDelete.getUserId().equals(userId)) {
             throw new UnauthorizedException("No tenés permisos para borrar esta cuenta");
         }
 

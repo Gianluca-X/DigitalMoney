@@ -8,7 +8,7 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class UserEntryDTO {
-    private String email;
+    private Long userId;
     private String alias;
     private String cvu;
     private String username;

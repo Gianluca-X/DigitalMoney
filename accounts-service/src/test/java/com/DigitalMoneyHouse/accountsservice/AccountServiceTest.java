@@ -57,7 +57,6 @@ public class AccountServiceTest {
 
         AccountCreationRequest request = AccountCreationRequest.builder()
                 .userId(1L)
-                .email("matiazep2@gmail.com")
                 .alias("alias.prueba.test")
                 .cvu("6784193874263590167412")
                 .initialBalance(BigDecimal.valueOf(1000))

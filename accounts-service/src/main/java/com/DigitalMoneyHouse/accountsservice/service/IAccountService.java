@@ -15,7 +15,7 @@ public interface IAccountService {
      List<Transaction> getLastTransactions(Long accountId);
      AccountOutDTO getAccountById(Long accountId) throws ResourceNotFoundException;
      AccountOutDTO updateAccount(Long id, AccountEntryDTO accountEntryDTO) throws ResourceNotFoundException;
-     Account findByEmail(String email);
+     Account findByUserId(Long userId) throws ResourceNotFoundException;
      List<AccountOutDTO> getAccounts();
      AccountResponse createAccount(AccountCreationRequest request);
 
