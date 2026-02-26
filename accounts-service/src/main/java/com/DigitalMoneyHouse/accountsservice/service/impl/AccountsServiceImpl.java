@@ -68,22 +68,28 @@ public class AccountsServiceImpl implements IAccountService {
         return modelMapper.map(account, AccountOutDTO.class);
     }
 
-    public AccountOutDTO updateAccount(Long id, AccountEntryDTO accountEntryDTO) throws ResourceNotFoundException {
-        // Verificar si la cuenta existe
-        Account existingAccount = accountsRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
+    public AccountOutDTO updateAccount(Long id, AccountEntryDTO dto)
+        throws ResourceNotFoundException {
 
-        // Actualizar los campos de la cuenta existente
-        modelMapper.map(accountEntryDTO, existingAccount);
+    Account existing = accountsRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
-        // Guardar la cuenta actualizada en la base de datos
-        Account updatedAccount = accountsRepository.save(existingAccount);
-
-        // Usar ModelMapper para convertir la entidad actualizada a AccountOutDTO
-        AccountOutDTO accountOutDTO = modelMapper.map(updatedAccount, AccountOutDTO.class);
-
-        return accountOutDTO; // Retornar el DTO
+    // 🔒 Actualizar manualmente SOLO lo permitido
+    if (dto.getAlias() != null) {
+        existing.setAlias(dto.getAlias());
     }
+
+    if (dto.getCvu() != null) {
+        existing.setCvu(dto.getCvu());
+    }
+    if (dto.getBalance() != null) {
+        existing.setBalance(dto.getBalance());
+    }
+
+    Account saved = accountsRepository.save(existing);
+
+    return modelMapper.map(saved, AccountOutDTO.class);
+}
 
     public Account findByUserId(Long userId) throws ResourceNotFoundException {
         return accountsRepository.findByUserId(userId)
