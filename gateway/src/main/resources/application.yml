@@ -5,15 +5,17 @@ spring:
   application:
     name: gateway-service
 
-
   cloud:
     config:
       enabled: false
+
     gateway:
       globalcors:
+        add-to-simple-url-handler-mapping: true
         corsConfigurations:
           '[/**]':
-            allowedOrigins: ${FRONTEND_URL}
+            allowedOriginPatterns:
+              - https://*.vercel.app
             allowedMethods:
               - GET
               - POST
@@ -21,8 +23,11 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
-            allowedHeaders: "*"
+            allowedHeaders:
+              - "*"
             allowCredentials: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
 
       routes:
         - id: auth-service
@@ -44,7 +49,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          secret: ${JWT_SECRET}
+          secret-key: ${JWT_SECRET}
 
 management:
   endpoints:
@@ -52,5 +57,5 @@ management:
       exposure:
         include: health,info,metrics,env,loggers
   endpoint:
-      health:
-            show-details: always
+    health:
+      show-details: always
