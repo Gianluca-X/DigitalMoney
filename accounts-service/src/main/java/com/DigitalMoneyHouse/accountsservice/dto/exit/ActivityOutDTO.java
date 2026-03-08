@@ -17,8 +17,8 @@ public class ActivityOutDTO {
     private Long accountId;
     private String type; // Tipo de actividad (ejemplo: "pago", "carga", etc.)
     private BigDecimal amount;
-    private String date; // Fecha de la actividad
-    private String cvu;
+    private LocalDateTime date;    
+    private String description;
 
 
 }
