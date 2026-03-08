@@ -48,7 +48,7 @@ public class ModelMapperConfig {
                     mapper.map(Activity::getType, ActivityOutDTO::setType);
                     mapper.map(Activity::getAccountId, ActivityOutDTO::setAccountId);
                     mapper.map(Activity::getAmount, ActivityOutDTO::setAmount);
-                    mapper.map(Activity::getDescription, ActivityOutDTO::setCvu);
+                    mapper.map(Activity::getDescription, ActivityOutDTO::setDescription);
                 });
 
         return modelMapper;
