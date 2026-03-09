@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: auth-service
+    env: docker
+    plan: starter
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    cacheDirectories:
+      - ~/.m2/repository
+    envVars:
+      SPRING_PROFILES_ACTIVE: prod
+    autoDeploy: true
