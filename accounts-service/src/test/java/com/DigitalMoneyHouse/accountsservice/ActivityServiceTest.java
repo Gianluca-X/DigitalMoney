@@ -86,14 +86,14 @@ public class ActivityServiceTest {
         activityOutDTO1.setAccountId(accountId);
         activityOutDTO1.setType("pago");
         activityOutDTO1.setAmount(new BigDecimal("100.00"));
-        activityOutDTO1.setDate("2024-11-01T10:00:00");
+        activityOutDTO1.setDate(LocalDateTime.of(2024, 11, 2, 14, 30));
 
         ActivityOutDTO activityOutDTO2 = new ActivityOutDTO();
         activityOutDTO2.setId(2L);
         activityOutDTO2.setAccountId(accountId);
         activityOutDTO2.setType("carga");
         activityOutDTO2.setAmount(new BigDecimal("200.00"));
-        activityOutDTO2.setDate("2024-11-02T14:30:00");
+        activityOutDTO2.setDate(LocalDateTime.of(2024, 11, 2, 14, 30));
 
         // Configurar los mocks
         when(accountsRepository.findById(accountId)).thenReturn(Optional.of(accountMock));
@@ -113,14 +113,14 @@ public class ActivityServiceTest {
         assertEquals(accountId, result.get(0).getAccountId());
         assertEquals("pago", result.get(0).getType());
         assertEquals(new BigDecimal("100.00"), result.get(0).getAmount());
-        assertEquals("2024-11-01T10:00:00", result.get(0).getDate());
+        assertEquals(LocalDateTime.of(2024, 11, 2, 14, 30), result.get(0).getDate());
 
         // Verificar datos del segundo DTO
         assertEquals(2L, result.get(1).getId());
         assertEquals(accountId, result.get(1).getAccountId());
         assertEquals("carga", result.get(1).getType());
         assertEquals(new BigDecimal("200.00"), result.get(1).getAmount());
-        assertEquals("2024-11-02T14:30:00", result.get(1).getDate());
+        assertEquals(LocalDateTime.of(2024, 11, 2, 14, 30), result.get(1).getDate());
 
         // Verificar que los métodos del repositorio fueron llamados
         verify(accountsRepository).findById(accountId);
@@ -147,7 +147,7 @@ public class ActivityServiceTest {
         activityOutDTO.setAccountId(accountId);
         activityOutDTO.setType("pago");
         activityOutDTO.setAmount(new BigDecimal("150.00"));
-        activityOutDTO.setDate("2024-11-05T15:45:00");
+        activityOutDTO.setDate(LocalDateTime.of(2024, 11, 2, 14, 30));
 
         // Configuración de los mocks
         when(activityRepository.findByAccountIdAndId(accountId, activityId))
@@ -163,7 +163,7 @@ public class ActivityServiceTest {
         assertEquals(accountId, result.getAccountId());
         assertEquals("pago", result.getType());
         assertEquals(new BigDecimal("150.00"), result.getAmount());
-        assertEquals("2024-11-05T15:45:00", result.getDate());
+        assertEquals(LocalDateTime.of(2024, 11, 2, 14, 30), result.getDate());
 
         // Verificar que los métodos del repositorio fueron llamados
         verify(activityRepository).findByAccountIdAndId(accountId, activityId);
@@ -205,8 +205,8 @@ public class ActivityServiceTest {
         ActivityFilterEntryDTO filter = ActivityFilterEntryDTO.builder()
                 .minAmount(new BigDecimal("50"))
                 .maxAmount(new BigDecimal("200"))
-                .startDate(LocalDate.of(2024, 1, 1))
-                .endDate(LocalDate.of(2024, 12, 31))
+                .startDate(LocalDate.of(2024, 11, 2))
+                .endDate(LocalDate.of(2024, 11, 2))
                 .activityType("pago")
                 .build();
 
@@ -215,14 +215,14 @@ public class ActivityServiceTest {
         activity1.setId(1L);
         activity1.setType("pago");
         activity1.setAmount(new BigDecimal("100"));
-        activity1.setDate(LocalDate.of(2024, 5, 20).atStartOfDay());
+        activity1.setDate(LocalDate.of(2024, 11, 2).atStartOfDay());
         activity1.setDescription("Pago de servicio");
 
         Activity activity2 = new Activity();
         activity2.setId(2L);
         activity2.setType("pago");
         activity2.setAmount(new BigDecimal("150"));
-        activity2.setDate(LocalDate.of(2024, 6, 15).atStartOfDay());
+        activity2.setDate(LocalDate.of(2024, 11, 2).atStartOfDay());
         activity2.setDescription("Pago de factura");
 
         List<Activity> mockActivities = Arrays.asList(activity1, activity2);
@@ -232,20 +232,20 @@ public class ActivityServiceTest {
         dto1.setId(1L);
         dto1.setType("pago");
         dto1.setAmount(new BigDecimal("100"));
-        dto1.setDate("2024-05-20T00:00");
+        dto1.setDate(LocalDateTime.of(2024, 11, 2, 14, 30));
 
         ActivityOutDTO dto2 = new ActivityOutDTO();
         dto2.setId(2L);
         dto2.setType("pago");
         dto2.setAmount(new BigDecimal("150"));
-        dto2.setDate("2024-06-15T00:00");
+        dto2.setDate(LocalDateTime.of(2024, 11, 2, 14, 30));
 
         // Configurar mocks
         when(activityRepository.filterActivities(
                 new BigDecimal("50"),
                 new BigDecimal("200"),
-                LocalDate.of(2024, 1, 1),
-                LocalDate.of(2024, 12, 31),
+                LocalDate.of(2024, 11, 2),
+                LocalDate.of(2024, 11, 2),
                 "pago"
         )).thenReturn(mockActivities);
 
@@ -265,8 +265,8 @@ public class ActivityServiceTest {
         verify(activityRepository, times(1)).filterActivities(
                 new BigDecimal("50"),
                 new BigDecimal("200"),
-                LocalDate.of(2024, 1, 1),
-                LocalDate.of(2024, 12, 31),
+                LocalDate.of(2024, 11, 2),
+                LocalDate.of(2024, 11, 2),
                 "pago"
         );
 
