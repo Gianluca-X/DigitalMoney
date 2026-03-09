@@ -100,9 +100,7 @@ entry.setRol(Role.USER);
         loginUser.setPassword("123456");
 
         AuthResponse authResponse = authService.login(loginUser);
-        assertEquals("token123", token);
-    }
-
+assertEquals("token123", authResponse.getToken());
     @Test
     void login_ShouldThrowIfEmailNotVerified() {
         User userFromDb = new User();
