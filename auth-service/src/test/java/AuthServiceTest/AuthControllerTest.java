@@ -52,10 +52,13 @@ entry.setRol(Role.USER); // Ajusta según tu enum
         loginRequest.setEmail("nerea@example.com");
         loginRequest.setPassword("clave123");
 
-        when(authService.login(loginRequest)).thenReturn("jwt-token");
+        AuthResponse mockResponse = new AuthResponse();
+mockResponse.setToken("jwt-token");
+mockResponse.setAuthId(1L); // si quieres
 
-        ResponseEntity<String> response = controller.login(loginRequest);
+when(authService.login(loginRequest)).thenReturn(mockResponse);
 
+ResponseEntity<AuthResponse> response = controller.login(loginRequest);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().contains("jwt-token"));
         assertTrue(response.getBody().contains("Login Exitoso"));
