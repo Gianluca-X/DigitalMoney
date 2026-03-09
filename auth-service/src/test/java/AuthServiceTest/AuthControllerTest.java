@@ -28,7 +28,10 @@ class AuthControllerTest {
 
     @Test
     void register_returnsAuthResponse() {
-        UserEntry entry = new UserEntry("Nerea", "Martínez", "11223344", "22334455", "nerea@example.com", "clave123");
+        UserEntry entry = new UserEntry();
+entry.setEmail("nerea@example.com");
+entry.setPassword("clave123");
+entry.setRol(Role.USER); // Ajusta según tu enum
         AuthResponse mockResponse = new AuthResponse();
         mockResponse.setAuthId(1L);
         mockResponse.setToken("jwt-token");
