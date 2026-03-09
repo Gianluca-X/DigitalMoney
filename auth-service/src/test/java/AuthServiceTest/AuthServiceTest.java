@@ -45,7 +45,10 @@ class AuthServiceTest {
     void register_ShouldRegisterUserAndSendEmailAndPublishEvent() {
         // Arrange
         // Solo email y password, que es lo que realmente usa AuthService
-        UserEntry entry = new UserEntry("nerea@example.com", "clave123");
+        UserEntry entry = new UserEntry();
+entry.setEmail("nerea@example.com");
+entry.setPassword("clave123");
+entry.setRol(Role.USER);
 
         // Simulamos el usuario que se guarda en la DB
         User savedUser = new User();
