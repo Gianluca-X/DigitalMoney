@@ -1,5 +1,5 @@
 package com.example.authservice.service;
-
+import com.example.authservice.entity.Role;
 import com.example.authservice.dto.*;
 import com.example.authservice.entity.User;
 import com.example.authservice.repository.UserRepository;
