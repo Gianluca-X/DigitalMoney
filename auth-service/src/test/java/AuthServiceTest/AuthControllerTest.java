@@ -47,23 +47,25 @@ entry.setRol(Role.USER); // Ajusta según tu enum
     }
 
     @Test
-    void login_returnsToken() {
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setEmail("nerea@example.com");
-        loginRequest.setPassword("clave123");
+void login_returnsToken() {
+    LoginRequest loginRequest = new LoginRequest();
+    loginRequest.setEmail("nerea@example.com");
+    loginRequest.setPassword("clave123");
 
-        AuthResponse mockResponse = new AuthResponse();
-mockResponse.setToken("jwt-token");
-mockResponse.setAuthId(1L); // si quieres
+    // Mock del AuthResponse que devuelve authService
+    AuthResponse mockResponse = new AuthResponse();
+    mockResponse.setToken("jwt-token");
+    mockResponse.setAuthId(1L);
 
-when(authService.login(loginRequest)).thenReturn(mockResponse);
+    when(authService.login(loginRequest)).thenReturn(mockResponse);
 
-ResponseEntity<AuthResponse> response = controller.login(loginRequest);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(response.getBody().contains("jwt-token"));
-        assertTrue(response.getBody().contains("Login Exitoso"));
-    }
+    ResponseEntity<AuthResponse> response = controller.login(loginRequest);
 
+    assertEquals(200, response.getStatusCodeValue());
+    assertNotNull(response.getBody());
+    assertEquals("jwt-token", response.getBody().getToken());  // CORRECTO
+    assertEquals(1L, response.getBody().getAuthId());           // opcional
+}
     @Test
     void changeEmail_success() {
         ResponseEntity<String> response = controller.changeEmail("nuevo@example.com", authentication);
