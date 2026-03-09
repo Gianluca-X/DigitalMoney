@@ -101,6 +101,7 @@ entry.setRol(Role.USER);
 
         AuthResponse authResponse = authService.login(loginUser);
 assertEquals("token123", authResponse.getToken());
+}
     @Test
     void login_ShouldThrowIfEmailNotVerified() {
         User userFromDb = new User();
