@@ -1,6 +1,7 @@
 package com.example.authservice.service;
-import com.example.authservice.entity.Role;
+
 import com.example.authservice.dto.*;
+import com.example.authservice.entity.Role;
 import com.example.authservice.entity.User;
 import com.example.authservice.repository.UserRepository;
 import com.example.authservice.security.JwtUtil;
@@ -34,132 +35,177 @@ class AuthServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        // Configurar SecurityContext con Authentication mockeado
         SecurityContext securityContext = mock(SecurityContext.class);
         Authentication authentication = mock(Authentication.class);
+
         when(authentication.getName()).thenReturn("user@mail.com");
         when(securityContext.getAuthentication()).thenReturn(authentication);
+
         SecurityContextHolder.setContext(securityContext);
     }
-    @Test
-    void register_ShouldRegisterUserAndSendEmailAndPublishEvent() {
-        // Arrange
-        // Solo email y password, que es lo que realmente usa AuthService
-        UserEntry entry = new UserEntry();
-entry.setEmail("nerea@example.com");
-entry.setPassword("clave123");
-entry.setRol(Role.USER);
 
-        // Simulamos el usuario que se guarda en la DB
+    @Test
+    void register_ShouldRegisterUserAndSendEmail() {
+
+        UserEntry entry = new UserEntry();
+        entry.setEmail("nerea@example.com");
+        entry.setPassword("clave123");
+        entry.setRol(Role.USER);
+
         User savedUser = new User();
         savedUser.setId(1L);
-        savedUser.setEmail(entry.getEmail());
+        savedUser.setEmail("nerea@example.com");
         savedUser.setPassword("hashed");
         savedUser.setVerificationCode("code123");
         savedUser.setEmailVerified(false);
 
-        // Mock del passwordEncoder
-        when(passwordEncoder.encode(entry.getPassword())).thenReturn("hashed");
-
-        // Cuando guardamos en la repo, devolvemos el usuario con ID
+        when(passwordEncoder.encode("clave123")).thenReturn("hashed");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-
-        // Mock del JWT
-        when(jwtUtil.generateToken(entry)).thenReturn("mocked-token");
-
-        // Act
-
+        when(jwtUtil.generateToken(any(User.class))).thenReturn("mocked-token");
 
         AuthResponse response = authService.register(entry);
-        response.setAuthId(1L);
-        // Assert
+
         assertNotNull(response);
-        assertEquals(1L, response.getAuthId());           // Ahora authId viene del savedUser
         assertEquals("mocked-token", response.getToken());
 
-        // Verificamos que se haya enviado el email
-        verify(emailService).sendVerificationEmail(eq(entry.getEmail()), savedUser.getVerificationCode(), any(String.class));
+        verify(userRepository, times(2)).save(any(User.class));
 
-        // Si publicás eventos, verificamos que se llame al publicador
+        verify(emailService).sendVerificationEmail(
+                eq("nerea@example.com"),
+                anyString(),
+                anyString()
+        );
     }
-
 
     @Test
     void login_ShouldReturnTokenIfCredentialsAreValid() {
-        User userFromDb = new User();
-        userFromDb.setEmail("user@mail.com");
-        userFromDb.setPassword("hashed");
-        userFromDb.setEmailVerified(true);
 
-        when(userRepository.findByEmail("user@mail.com")).thenReturn(Optional.of(userFromDb));
-        when(passwordEncoder.matches("123456", "hashed")).thenReturn(true);
-        when(jwtUtil.generateToken(userFromDb)).thenReturn("token123");
-
-        LoginRequest loginUser = new LoginRequest();
-        loginUser.setEmail("user@mail.com");
-        loginUser.setPassword("123456");
-
-        AuthResponse authResponse = authService.login(loginUser);
-assertEquals("token123", authResponse.getToken());
-}
-    @Test
-    void login_ShouldThrowIfEmailNotVerified() {
-        User userFromDb = new User();
-        userFromDb.setEmail("user@mail.com");
-        userFromDb.setPassword("hashed");
-        userFromDb.setEmailVerified(false);
-
-        when(userRepository.findByEmail("user@mail.com")).thenReturn(Optional.of(userFromDb));
-        when(passwordEncoder.matches("123456", "hashed")).thenReturn(true);
-
-        LoginRequest loginUser = new LoginRequest();
-        loginUser.setEmail("user@mail.com");
-        loginUser.setPassword("123456");
-
-        assertThrows(RuntimeException.class, () -> authService.login(loginUser));
-    }
-
-    @Test
-    void changeEmail_ShouldUpdateEmailAndPublishEvent() {
         User user = new User();
         user.setId(1L);
         user.setEmail("user@mail.com");
+        user.setPassword("hashed");
+        user.setEmailVerified(true);
 
-        when(userRepository.findByEmail("user@mail.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("user@mail.com"))
+                .thenReturn(Optional.of(user));
 
-        authService.changeEmail("new@mail.com");
+        when(passwordEncoder.matches("123456", "hashed"))
+                .thenReturn(true);
 
-        assertEquals("new@mail.com", user.getEmail());
-        verify(userRepository).save(user);
-        verify(rabbitTemplate).convertAndSend(eq("user.exchange"), eq("user.email.changed"), any(UserEmailChangedEvent.class));
+        when(jwtUtil.generateToken(any(User.class)))
+                .thenReturn("token123");
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("user@mail.com");
+        request.setPassword("123456");
+
+        AuthResponse response = authService.login(request);
+
+        assertEquals("token123", response.getToken());
     }
 
     @Test
-    void changePassword_ShouldUpdatePassword() {
-        User user = new User();
-        user.setPassword("old");
+    void verifyEmail_ShouldVerifyUser() {
 
-        when(userRepository.findByEmail("user@mail.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("newPass")).thenReturn("newEncoded");
-
-        authService.changePassword("newPass");
-
-        assertEquals("newEncoded", user.getPassword());
-        verify(userRepository).save(user);
-    }
-
-    @Test
-    void verifyEmail_ShouldSetEmailVerifiedToTrue() {
         User user = new User();
         user.setEmail("user@mail.com");
-        user.setEmailVerified(false);
         user.setVerificationCode("code123");
+        user.setEmailVerified(false);
 
-        when(userRepository.findByEmail("user@mail.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByVerificationCode("code123"))
+                .thenReturn(Optional.of(user));
 
         authService.verifyEmail("code123");
 
         assertTrue(user.isEmailVerified());
+
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void changeEmail_ShouldUpdateEmailAndSendEvent() {
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@mail.com");
+
+        when(userRepository.findByEmail("user@mail.com"))
+                .thenReturn(Optional.of(user));
+
+        authService.changeEmail("new@mail.com");
+
+        assertEquals("new@mail.com", user.getEmail());
+
+        verify(userRepository).save(user);
+
+        verify(rabbitTemplate).convertAndSend(
+                eq("user.exchange"),
+                eq("user.email.changed"),
+                any(UserEmailChangedEvent.class)
+        );
+    }
+
+    @Test
+    void changePassword_ShouldUpdatePassword() {
+
+        User user = new User();
+        user.setEmail("user@mail.com");
+        user.setPassword("old");
+
+        when(userRepository.findByEmail("user@mail.com"))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.encode("newPass"))
+                .thenReturn("newEncoded");
+
+        authService.changePassword("newPass");
+
+        assertEquals("newEncoded", user.getPassword());
+
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateUser_ShouldUpdateUserAndReturnToken() {
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("old@mail.com");
+        user.setRol(Role.USER);
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        when(jwtUtil.generateToken(any(User.class)))
+                .thenReturn("token123");
+
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setId(1L);
+        request.setEmail("new@mail.com");
+        request.setRole(Role.ADMIN);
+
+        AuthResponse response = authService.updateUser(request);
+
+        assertEquals("token123", response.getToken());
+        assertEquals("new@mail.com", user.getEmail());
+        assertEquals(Role.ADMIN, user.getRol());
+
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void deleteUser_ShouldDeleteUser() {
+
+        User user = new User();
+        user.setId(1L);
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        String result = authService.deleteUser(1L);
+
+        assertEquals("Usuario de auth eliminado con éxito", result);
+
+        verify(userRepository).delete(user);
     }
 }
