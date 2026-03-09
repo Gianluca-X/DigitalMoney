@@ -1,5 +1,5 @@
 package com.example.authservice.controller;
-
+import com.example.authservice.entity.Role;
 import com.example.authservice.dto.AuthResponse;
 import com.example.authservice.dto.LoginRequest;
 import com.example.authservice.dto.UserEntry;
