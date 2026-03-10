@@ -78,7 +78,13 @@ public class AuthController {
         return ResponseEntity.ok("Usuario eliminado con éxito");
     }
 
-
+   @PostMapping("/resend-verification")
+   public ResponseEntity<String> resendVerification(
+           @RequestBody ResendVerificationRequest request
+           ) {
+               authService.resendVerification(request.getEmail());
+                   return ResponseEntity.ok("Verification code resent successfully");
+                   }
 
 
 }

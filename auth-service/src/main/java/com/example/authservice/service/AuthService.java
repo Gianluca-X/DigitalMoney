@@ -169,5 +169,31 @@
             userRepository.delete(user);
             return "Usuario de auth eliminado con éxito";
         }
+        public void resendVerification(String email) {
+
+                User user = userRepository.findByEmail(email)
+                            .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+                                if (user.isEmailVerified()) {
+                                        throw new RuntimeException("El email ya está verificado");
+                                            }
+
+                                                String verificationCode = UUID.randomUUID().toString();
+
+                                                    user.setVerificationCode(verificationCode);
+                                                        userRepository.save(user);
+
+                                                            String verificationLink =
+                                                                        gatewayUrl + "/auth/verify?code=" + verificationCode;
+
+                                                                            emailService.sendVerificationEmail(
+                                                                                        user.getEmail(),
+                                                                                                    verificationCode,
+                                                                                                                verificationLink
+                                                                                                                    );
+
+                                                                                                                        log.info("Nuevo código de verificación enviado a {}", email);
+                                                                                                                        }
+        }
 
     }
