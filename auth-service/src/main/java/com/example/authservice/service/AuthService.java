@@ -193,7 +193,7 @@
                                                                                                                     );
 
                                                                                                                         log.info("Nuevo código de verificación enviado a {}", email);
-                                                                                                                        }
+                                                                                                                        
         }
 
     }
