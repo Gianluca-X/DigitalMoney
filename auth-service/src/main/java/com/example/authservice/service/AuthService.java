@@ -167,6 +167,6 @@
 
             userRepository.delete(user);
             return "Usuario de auth eliminado con éxito";
-        }
+       
 
     }
