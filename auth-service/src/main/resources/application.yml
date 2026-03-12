@@ -36,6 +36,8 @@ sendgrid:
 
 gateway:
   url: ${GATEWAY_URL}
+frontend:
+  url: ${FRONTEND_URL}  
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000 # 1 día en milisegundos

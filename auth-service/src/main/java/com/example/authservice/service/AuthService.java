@@ -30,8 +30,8 @@
         private final PasswordEncoder passwordEncoder;
         private final RabbitTemplate rabbitTemplate; // Para enviar eventos a RabbitMQ
         private final UserEventPublisher userEventPublisher; // Inyectar el publicador de eventos
-        @Value("${gateway.url}")
-        private String gatewayUrl;
+        @Value("${frontend.url}")
+        private String frontUrl;
 
         // Registro de un usuario
         public AuthResponse register(UserEntry userEntry) {
@@ -44,14 +44,13 @@
                     userEntry.getRol() == null ? Role.USER : userEntry.getRol()
             );
 
-            userRepository.save(user);
             String verificationCode = UUID.randomUUID().toString();
             user.setVerificationCode(verificationCode);
             user.setEmailVerified(false);
             userRepository.save(user);
 
             // Enviar el email
-            String verificationLink = gatewayUrl + "/auth/verify?code=" + verificationCode;
+            String verificationLink = frontUrl + "/verify-email?code=" + verificationCode;
             emailService.sendVerificationEmail(user.getEmail(), verificationCode, verificationLink);
             // Publicar el evento de registro de usuario
 
@@ -169,31 +168,30 @@
             userRepository.delete(user);
             return "Usuario de auth eliminado con éxito";
         }
-        public void resendVerification(String email) {
+    public void resendVerification(String email) {
 
-                User user = userRepository.findByEmail(email)
-                            .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+    User user = userRepository.findByEmail(email)
+    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-                                if (user.isEmailVerified()) {
-                                        throw new RuntimeException("El email ya está verificado");
-                                            }
-
-                                                String verificationCode = UUID.randomUUID().toString();
-
-                                                    user.setVerificationCode(verificationCode);
-                                                        userRepository.save(user);
-
-                                                            String verificationLink =
-                                                                        gatewayUrl + "/auth/verify?code=" + verificationCode;
-
-                                                                            emailService.sendVerificationEmail(
-                                                                                        user.getEmail(),
-                                                                                                    verificationCode,
-                                                                                                                verificationLink
-                                                                                                                    );
-
-                                                                                                                        log.info("Nuevo código de verificación enviado a {}", email);
-                                                                                                                        
-        }
-
+    if (user.isEmailVerified()) {
+    throw new RuntimeException("El email ya está verificado");
     }
+
+    String verificationCode = UUID.randomUUID().toString();
+
+        user.setVerificationCode(verificationCode);
+            userRepository.save(user);
+
+    String verificationLink =
+    frontUrl + "/verify-email?code=" + verificationCode;
+
+    emailService.sendVerificationEmail(
+    user.getEmail(),
+                verificationCode,
+                            verificationLink
+                                );
+
+                                    log.info("Nuevo código de verificación enviado a {}", email);
+                                    }
+    }
+
