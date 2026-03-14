@@ -220,7 +220,7 @@ Tecnologías:
 
 # 👨‍💻 Autor
 
-Gianluca Cabrera  
+Gianluca Fucci  
 
 Backend Developer
 
