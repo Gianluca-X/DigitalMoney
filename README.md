@@ -1,97 +1,228 @@
+⭐ Fullstack Digital Wallet
+Microservices Architecture
+Spring Boot + React + PostgreSQL
 # 💸 Digital Money House
 
-**Billetera Digital** desarrollada con **arquitectura de microservicios** para gestionar usuarios, cuentas, transferencias y tarjetas.
+Digital Money House es una **billetera digital fullstack** desarrollada con arquitectura de **microservicios**.
+
+Permite gestionar:
+
+- usuarios
+- cuentas
+- tarjetas
+- transferencias
+- historial de transacciones
+
+El proyecto simula el funcionamiento de una **plataforma fintech**, separando responsabilidades en distintos microservicios.
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+# 🚀 Demo del Proyecto
 
-- Java 21 / Spring Boot 3.x  
-- Spring Cloud (Eureka, Gateway, Feign)  
-- MySQL  
-- JPA / Hibernate  
-- Docker / Docker Compose  
-- JWT (Autenticación basada en tokens)  
-- Swagger / OpenAPI  
-- JUnit / RestAssured  
-- Git / GitHub  
+### 🌐 Frontend (Producción)
 
----
+https://digital-money-front-end.vercel.app/
 
-## 📐 Arquitectura del Sistema
+### 🎥 Video Demo
 
-```
-[User Service]   [Account Service]   [Auth Service]
-      \               |                   /
-               [API Gateway]
-                    |
-              [Eureka Server]
-```
+https://drive.google.com/file/d/1F4T0-C_T-sGwCIoXsECtkf-tLYchHWeQ/view
 
-- **Auth Service:** Registro, login y verificación de usuarios.  
-- **User Service:** Gestión de usuarios y perfil.  
-- **Account Service:** Cuentas digitales, alias, saldos y movimientos.  
-- **Transaction Service:** Transferencias y actividad de la cuenta.  
-- **API Gateway:** Enrutamiento centralizado.  
-- **Eureka Server:** Descubrimiento de servicios.  
+### 💻 Repositorio Frontend
+
+https://github.com/Gianluca-X/DigitalMoneyFrontEnd
+
+### ⚙️ Repositorio Backend
+
+https://github.com/Gianluca-X/DigitalMoney
 
 ---
 
-## 🚀 Guía de Instalación y Ejecución
+# 🛠️ Tecnologías Utilizadas
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone https://github.com/Gianluca-X/DigitalMoney.git
-   cd DigitalMoney
-   ```
+## Backend
 
-2. **Levantar base de datos y microservicios**
-   ```bash
-   docker-compose up
-   ```
+- Java 21
+- Spring Boot
+- Spring Cloud
+- JWT Authentication
+- JPA / Hibernate
 
-3. **Acceder a la documentación de la API**
-   - Swagger: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)  
+## Frontend
 
----
+- React
+- TypeScript
+- Axios
+- React Router
 
-## 🛣️ Endpoints Principales
+## Infraestructura
 
-### 🔑 Auth Service
-- `POST /auth/login` → Iniciar sesión  
-- `POST /auth/logout` → Cerrar sesión  
+- Docker
+- Docker Compose
+- PostgreSQL
 
-### 👤 User Service
-- `POST /users/register` → Registrar nuevo usuario  
-- `GET /users/{id}` → Obtener datos del usuario  
-- `PUT /users/{id}` → Editar datos personales  
+## Testing
 
-### 💳 Account Service
-- `GET /accounts/{id}` → Consultar saldo  
-- `GET /accounts/{id}/transactions` → Movimientos de la cuenta  
-- `POST /accounts/{id}/cards` → Asociar tarjeta  
-- `DELETE /accounts/{id}/cards/{idCard}` → Eliminar tarjeta  
+- JUnit
+- RestAssured
 
-### 🔄 Transaction Service
-- `POST /accounts/{id}/transfers` → Realizar transferencia  
-- `GET /accounts/{id}/activity` → Listar historial de transacciones  
+## Documentación
 
-📌 **Colección de pruebas Postman:**  
-[Link a Postman](https://www.postman.com/cryosat-cosmologist-51288854/workspace/moneydigitalhouse/collection/23314152-70434730-fb31-45b6-bb1f-4d56618f7af9?action=share&source=copy-link&creator=23314152)
+- Swagger / OpenAPI
+
+## Deploy
+
+Frontend → Vercel  
+Backend → Render
 
 ---
 
-## 🧪 Testing
+# 📐 Arquitectura del Sistema
 
-- **Testing manual:** Se realizaron pruebas exploratorias con Postman.  
-- **Testing automatizado:** JUnit y RestAssured (`mvn test`).  
-- **Drive con documentación de testing:** [Enlace a Google Drive](https://drive.google.com/drive/folders/1opUoRVye9heD8I8p3zUgNyAjeuttQmXP) 
+Arquitectura basada en **microservicios**.
+            Frontend (React)
+                    │
+                    ▼
+             API Gateway
+                    │
+    ┌───────────────┼───────────────┐
+    │               │               │
+Auth Service User Service Account Service
+    │               │               │
+    └───────────────▼───────────────┘
+PostgreSQL Database
+
 
 ---
 
-## 👥 Créditos
+# 📦 Microservicios
 
-- **Autor:** Gianluca X  
-- **Repositorio:** [DigitalMoney](https://github.com/Gianluca-X/DigitalMoney)  
+## Auth Service
+
+Responsable de autenticación.
+
+Funciones:
+
+- Registro
+- Login
+- Generación de JWT
 
 ---
+
+## User Service
+
+Gestión de usuarios.
+
+Funciones:
+
+- Crear usuario
+- Editar perfil
+- Obtener datos
+
+---
+
+## Account Service
+
+Gestión de cuentas.
+
+Funciones:
+
+- consultar saldo
+- asociar tarjetas
+- movimientos
+
+---
+
+## Transaction Service
+
+Transferencias entre cuentas.
+
+Funciones:
+
+- enviar dinero
+- historial de actividad
+
+---
+
+## API Gateway
+
+Entrada centralizada del sistema.
+
+Responsabilidades:
+
+- routing
+- seguridad
+- comunicación entre servicios
+
+---
+
+## Eureka Server
+
+Service discovery para microservicios.
+
+---
+
+# 🗄️ Base de Datos
+
+El proyecto inicialmente utilizaba **MySQL** pero fue migrado a **PostgreSQL** en la rama:
+
+
+feature/migrate-to-postgresql
+
+
+---
+
+# ⚙️ Instalación Local
+
+Clonar repositorio
+
+
+git clone https://github.com/Gianluca-X/DigitalMoney.git
+
+cd DigitalMoney
+
+
+Levantar servicios
+
+
+docker-compose up
+
+
+---
+
+# 📚 Documentación API
+
+Swagger disponible en:
+
+
+http://localhost:8080/swagger-ui.html
+
+
+---
+
+# 🧪 Testing
+
+Testing manual:
+
+- Postman
+
+Testing automatizado:
+
+
+mvn test
+
+
+Tecnologías:
+
+- JUnit
+- RestAssured
+
+---
+
+# 👨‍💻 Autor
+
+Gianluca Cabrera  
+
+Backend Developer
+
+GitHub  
+https://github.com/Gianluca-X
