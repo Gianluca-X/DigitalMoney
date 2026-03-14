@@ -58,7 +58,7 @@
             String token = jwtUtil.generateToken(user);
             AuthResponse authResponse = new AuthResponse();
             authResponse.setAuthId(user.getId());
-            authResponse.setToken(token);
+            authResponse.setToken(null);
             return authResponse;
         }
         public AuthResponse login(LoginRequest request) {
