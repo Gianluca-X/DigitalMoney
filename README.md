@@ -79,6 +79,7 @@ Backend → Render
 # 📐 Arquitectura del Sistema
 
 Arquitectura basada en **microservicios**.
+
             Frontend (React)
                     │
                     ▼
