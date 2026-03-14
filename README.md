@@ -87,7 +87,9 @@ Arquitectura basada en **microservicios**.
                     │
     ┌───────────────┼───────────────┐
     │               │               │
+
  Auth Service    User Service    Account Service
+ 
     │               │               │
     └───────────────▼───────────────┘
             PostgreSQL Database
