@@ -6,15 +6,20 @@ spring:
     name: auth-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 20000
+    
 
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: true
+      ddl-auto: update
+    show-sql: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
@@ -43,10 +48,8 @@ jwt:
   expiration: 86400000 # 1 día en milisegundos
 logging:
   level:
-    org.hibernate.type.descriptor.sql: TRACE
     org.springframework: INFO
-    com.zaxxer.hikari: DEBUG
-
+    org.hibernate.SQL: INFO
 management:
  endpoints:
   web:
@@ -55,3 +58,5 @@ management:
  endpoint:
   health:
    show-details: always
+   probes:
+     enabled: true

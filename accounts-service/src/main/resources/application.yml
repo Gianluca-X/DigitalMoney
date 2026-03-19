@@ -3,16 +3,20 @@ spring:
     name: accounts-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 20000
 
   jpa:
     open-in-view: false
-    show-sql: true
+    show-sql: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
@@ -26,13 +30,10 @@ server:
   port: ${PORT:8084}
 
 
-
 logging:
   level:
-    org.hibernate.type.descriptor.sql: TRACE
     org.springframework: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: INFO
 jwt:
   secret: ${JWT_SECRET}
 
@@ -47,3 +48,5 @@ management:
   endpoint:
    health:
     show-details: always
+    probes:
+     enabled: true
