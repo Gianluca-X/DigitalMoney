@@ -7,12 +7,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.repository.query.Param;
 @Repository
 public interface AccountsRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByUserId(Long userId);
     Account findByAlias(String recipientIdentifier);
     Account findByCvu(String recipientIdentifier);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Account a WHERE a.id = :id")
+    Optional<Account> findByIdForUpdate(@Param("id") Long id);
     @Modifying
     @Transactional
     @Query("UPDATE Account a SET a.alias = :alias WHERE a.id = :id")

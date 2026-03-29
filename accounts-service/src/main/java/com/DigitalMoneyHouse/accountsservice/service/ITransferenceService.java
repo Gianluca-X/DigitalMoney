@@ -12,8 +12,8 @@ import javax.security.auth.login.AccountNotFoundException;
 import java.util.List;
 
 public interface ITransferenceService {
-     void registerTransferenceFromCards(Long accountId, TransferenceOutDTO transferenceOutDto) throws ResourceNotFoundException, UnauthorizedException;
-     void makeTransferFromCash(Long accountId, TransferRequestOutDTO transferRequest) throws AccountNotFoundException, BadRequestException;
+     void registerTransferenceFromCards( TransferenceOutDTO transferenceOutDto) throws ResourceNotFoundException, UnauthorizedException;
+     Transference makeTransferFromCash(TransferRequestOutDTO request) throws BadRequestException;
     Account findRecipientAccount(String recipientIdentifier) throws AccountNotFoundException;
      List<Transference> getLastTransferredAccounts(Long accountId);
 }
