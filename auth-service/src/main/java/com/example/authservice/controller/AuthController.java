@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -85,6 +86,13 @@ public class AuthController {
                authService.resendVerification(request.getEmail());
                    return ResponseEntity.ok("Verification code resent successfully");
                    }
+    
 
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> request) {
 
+        String refreshTokenStr = request.get("refreshToken");
+
+        return ResponseEntity.ok(authService.refresh(refreshTokenStr));
+        }              
 }

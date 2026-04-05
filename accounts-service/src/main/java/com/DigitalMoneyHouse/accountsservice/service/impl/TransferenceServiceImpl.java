@@ -67,11 +67,12 @@ public class TransferenceServiceImpl implements ITransferenceService {
         transference.setDate(LocalDateTime.now());
         transference.setType("deposit");
         transference.setRecipient(account.getCvu());
-
-        transferenceRepository.save(transference);
-
         account.setBalance(account.getBalance().add(dto.getAmount()));
         accountsRepository.save(account);
+        transference.setStatus("SUCCESS");
+        transferenceRepository.save(transference);
+
+   
 
         Activity activity = new Activity();
         activity.setAccountId(account.getId());
@@ -79,7 +80,7 @@ public class TransferenceServiceImpl implements ITransferenceService {
         activity.setAmount(dto.getAmount());
         activity.setDescription("Depósito con tarjeta");
         activity.setDate(LocalDateTime.now());
-
+        
         activityRepository.save(activity);
     }
 
@@ -92,6 +93,9 @@ Account sender = accountsRepository
         .orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada"));
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("El monto debe ser mayor a 0");
+        }
+       if (request.getRecipient() == null || request.getRecipient().isBlank()) {
+            throw new BadRequestException("Destinatario inválido");
         }
 
         Account recipient = findRecipientAccount(request.getRecipient());
@@ -110,15 +114,27 @@ Account sender = accountsRepository
         tx.setAmount(request.getAmount());
         tx.setType("transfer");
         tx.setDate(LocalDateTime.now());
+      try {
 
-        transferenceRepository.save(tx);
+            sender.setBalance(sender.getBalance().subtract(request.getAmount()));
+            recipient.setBalance(recipient.getBalance().add(request.getAmount()));
 
-        sender.setBalance(sender.getBalance().subtract(request.getAmount()));
-        recipient.setBalance(recipient.getBalance().add(request.getAmount()));
+            accountsRepository.save(sender);
+            accountsRepository.save(recipient);
 
-        accountsRepository.save(sender);
-        accountsRepository.save(recipient);
+            tx.setStatus("SUCCESS");
 
+        } catch (Exception e) {
+
+            tx.setStatus("FAILED");
+            throw e;
+
+        } finally {
+            transferenceRepository.save(tx);
+        }
+
+
+       
         // 📊 Actividad emisor
         Activity senderActivity = new Activity();
         senderActivity.setAccountId(sender.getId());

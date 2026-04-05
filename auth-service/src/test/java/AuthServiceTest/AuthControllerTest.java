@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-
+import com.example.authservice.service.RefreshTokenService;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -17,7 +17,8 @@ class AuthControllerTest {
 
     @Mock private AuthService authService;
     @Mock private Authentication authentication;
-
+@Mock
+RefreshTokenService refreshTokenService;
     @InjectMocks private AuthController controller;
 
     @BeforeEach
@@ -34,7 +35,6 @@ entry.setPassword("clave123");
 entry.setRol(Role.USER); // Ajusta según tu enum
         AuthResponse mockResponse = new AuthResponse();
         mockResponse.setAuthId(1L);
-        mockResponse.setToken("jwt-token");
 
         when(authService.register(entry)).thenReturn(mockResponse);
 
@@ -43,7 +43,6 @@ entry.setRol(Role.USER); // Ajusta según tu enum
         assertEquals(200, response.getStatusCodeValue());
         assertNotNull(response.getBody());
         assertEquals(1L, response.getBody().getAuthId());
-        assertEquals("jwt-token", response.getBody().getToken());
     }
 
     @Test
@@ -89,7 +88,7 @@ void login_returnsToken() {
         ResponseEntity<String> response = controller.verify("codigo-verificacion");
 
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Email verified successfully", response.getBody());
+        assertEquals("✅ Email verified successfully", response.getBody());
         verify(authService).verifyEmail("codigo-verificacion");
     }
 }

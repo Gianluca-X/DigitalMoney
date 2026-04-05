@@ -19,6 +19,7 @@ public class Transference {
     private Long cardId;
     private BigDecimal amount;
     private LocalDateTime date;
+    private String status;
     private String type;  // "CREDIT" o "DEBIT"
     private String recipient;  // identificador del destinatario
 

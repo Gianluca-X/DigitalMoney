@@ -18,6 +18,8 @@
     import org.springframework.security.core.context.SecurityContextHolder;
     import org.springframework.security.crypto.password.PasswordEncoder;
     import org.springframework.stereotype.Service;
+    import com.example.authservice.entity.RefreshToken;
+    import java.util.Map;
 
     @Slf4j
     @Service
@@ -30,6 +32,7 @@
         private final PasswordEncoder passwordEncoder;
         private final RabbitTemplate rabbitTemplate; // Para enviar eventos a RabbitMQ
         private final UserEventPublisher userEventPublisher; // Inyectar el publicador de eventos
+        private final RefreshTokenService refreshTokenService;
         @Value("${frontend.url}")
         private String frontUrl;
 
@@ -72,11 +75,13 @@
             if (!user.isEmailVerified()) {
                 throw new EmailNotVerifiedException("Email no verificado"); // Opcional, 400 o 403 según política
             }
+            String accessToken = jwtUtil.generateToken(user);
 
-           String token = jwtUtil.generateToken(user);
+            RefreshToken refreshToken = refreshTokenService.create(user.getId());
             AuthResponse authResponse = new AuthResponse();
             authResponse.setAuthId(user.getId());
-            authResponse.setToken(token);
+            authResponse.setToken(accessToken);
+            authResponse.setRefreshToken(refreshToken.getToken()); 
             authResponse.setMessage("Login Exitoso");
             return authResponse;
 
@@ -193,5 +198,27 @@
 
                                     log.info("Nuevo código de verificación enviado a {}", email);
                                     }
+      
+                                    
+        public Map<String, String> refresh(String refreshTokenStr) {
+
+            RefreshToken oldToken = refreshTokenService.validate(refreshTokenStr);
+
+            // ❌ eliminar viejo
+            refreshTokenService.delete(oldToken);
+
+            // ✅ crear nuevo
+            RefreshToken newToken = refreshTokenService.create(oldToken.getUserId());
+
+            User user = userRepository.findById(oldToken.getUserId())
+                    .orElseThrow();
+
+            String newAccessToken = jwtUtil.generateToken(user);
+
+            return Map.of(
+                    "accessToken", newAccessToken,
+                    "refreshToken", newToken.getToken()
+            );
+        }                                
     }
 

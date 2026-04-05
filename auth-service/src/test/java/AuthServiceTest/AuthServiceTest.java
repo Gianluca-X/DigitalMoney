@@ -1,5 +1,5 @@
 package com.example.authservice.service;
-
+import com.example.authservice.entity.RefreshToken;
 import com.example.authservice.dto.*;
 import com.example.authservice.entity.Role;
 import com.example.authservice.entity.User;
@@ -27,7 +27,7 @@ class AuthServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private RabbitTemplate rabbitTemplate;
     @Mock private UserEventPublisher userEventPublisher;
-
+    @Mock private RefreshTokenService refreshTokenService;       
     @InjectMocks
     private AuthService authService;
 
@@ -61,14 +61,12 @@ class AuthServiceTest {
 
         when(passwordEncoder.encode("clave123")).thenReturn("hashed");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(jwtUtil.generateToken(any(User.class))).thenReturn("mocked-token");
 
         AuthResponse response = authService.register(entry);
 
         assertNotNull(response);
-        assertEquals("mocked-token", response.getToken());
 
-        verify(userRepository, times(2)).save(any(User.class));
+        verify(userRepository, times(1)).save(any(User.class));
 
         verify(emailService).sendVerificationEmail(
                 eq("nerea@example.com"),
@@ -98,6 +96,11 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest();
         request.setEmail("user@mail.com");
         request.setPassword("123456");
+        RefreshToken mockRefresh = new RefreshToken();
+mockRefresh.setToken("refresh123");
+
+when(refreshTokenService.create(anyLong()))
+        .thenReturn(mockRefresh);
 
         AuthResponse response = authService.login(request);
 

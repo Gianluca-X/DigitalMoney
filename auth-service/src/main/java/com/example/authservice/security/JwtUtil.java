@@ -13,6 +13,7 @@ public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String secret;
+    private final long EXPIRATION = 1000 * 60 * 15;
 
     public String generateToken(User user) {
         return Jwts.builder()
@@ -20,7 +21,7 @@ public class JwtUtil {
                 .claim("userId", user.getId())
                 .claim("role", user.getRol().name())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }
