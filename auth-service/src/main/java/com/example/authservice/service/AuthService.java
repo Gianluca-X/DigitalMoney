@@ -110,9 +110,7 @@
             log.info("Email changed for user: {}. Event sent to user-service.", user.getId());
         }
 
-        // Cambio de contraseña
         public void changePassword(String newPassword) {
-            log.info("el new password: " + newPassword);
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth == null) {
                 log.error("❌ Authentication es NULL en SecurityContextHolder");
@@ -124,7 +122,6 @@
             log.info("email del user: " + email);
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
-            // Actualizar la contraseña en auth_db
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
 
@@ -139,7 +136,7 @@
             log.info("Código en DB: {}", user.getVerificationCode());
 
             user.setEmailVerified(true);
-            user.setVerificationCode(null); // Limpia el código para no reutilizarlo
+            user.setVerificationCode(null); 
             userRepository.save(user);
 
             log.info("✅ Email verified for user: {}", user.getEmail());
